@@ -93,8 +93,7 @@ impl fmt::Display for Value {
             Self::Symbol(x) => write!(f, "{}", x),
             Self::Char(x) => write!(f, "'{}'", x),
             Self::String(x) => write!(f, "\"{}\"", x),
-            Self::Closure { .. } => write!(f, "{{closure}}"),
-            Self::Builtin(_) => write!(f, "{{closure}}"),
+            Self::Closure { .. } | Self::Builtin(_) => write!(f, "{{closure}}"),
             Self::Nil => write!(f, "()"),
         }
     }
@@ -237,7 +236,7 @@ impl<'a> Env<'a> {
     fn get(&self, ident: &str) -> Option<Rc<RefCell<Value>>> {
         self.this
             .get(ident)
-            .map(|cell| cell.get())
+            .map(MaybeWeak::get)
             .or_else(|| self.outer.as_ref().and_then(|outer| outer.get(ident)))
     }
 
@@ -261,8 +260,7 @@ impl<'a> fmt::Display for Env<'a> {
         }
         self.outer
             .as_ref()
-            .map(|outer| write!(f, "{}", outer))
-            .unwrap_or(Ok(()))
+            .map_or(Ok(()), |outer| write!(f, "{}", outer))
     }
 }
 

@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
-use super::{Builtin, Expr, Ident, Value};
-use fxhash::FxHashMap as HashMap;
+use crate::{Builtin, Expr, Ident, Value};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
@@ -154,12 +153,16 @@ pub fn parse(sexp: Sexp) -> Expr {
                     val: Box::new(parse(a[2].clone())),
                 },
                 "let" => Expr::Let {
-                    bindings: HashMap::from_iter(a[1].clone().tuple().unwrap().into_iter().map(
-                        |x| {
+                    bindings: a[1]
+                        .clone()
+                        .tuple()
+                        .unwrap()
+                        .into_iter()
+                        .map(|x| {
                             let x = x.tuple().unwrap();
                             (x[0].clone().ident().unwrap(), parse(x[1].clone()))
-                        },
-                    )),
+                        })
+                        .collect(),
                     val: Box::new(parse(a[2].clone())),
                 },
                 "define" => match a[1].clone() {
@@ -177,7 +180,7 @@ pub fn parse(sexp: Sexp) -> Expr {
                             val: Box::new(parse(a[2].clone())),
                         }),
                     },
-                    _ => panic!(),
+                    Sexp::Literal(_) => panic!(),
                 },
                 "if" => Expr::If {
                     predicate: Box::new(parse(a[1].clone())),

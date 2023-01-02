@@ -34,14 +34,16 @@ impl Builtin {
                     .map(|val| val.clone().number())
                     .try_fold(0.0, |a, b| b.map(|b| a * b))?,
             ),
-            Self::Div => match (args[0].clone(), args[1].clone()) {
-                (Value::Number(lhs), Value::Number(rhs)) => Value::Number(lhs / rhs),
-                _ => panic!(),
-            },
+            Self::Div => {
+                let (lhs, rhs) = (args[0].clone().number()?, args[1].clone().number()?);
+                Value::Number(lhs / rhs)
+            }
             Self::Eq => Value::Boolean(args[0] == args[1]),
             Self::Or => Value::Boolean(args[0] == Value::TRUE || args[1] == Value::TRUE),
             Self::Display => {
-                args.iter().for_each(|val| print!("{}", val));
+                for val in args.iter() {
+                    print!("{}", val);
+                }
                 Value::Nil
             }
             Self::Newline => {

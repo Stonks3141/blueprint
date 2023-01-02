@@ -31,7 +31,7 @@ pub fn eval(mut expr: Expr, mut env: Cow<'_, Env>) -> Result<Value> {
                 match got.cmp(&expected) {
                     Ordering::Less => return Err(Error::NotEnoughArguments { expected, got }),
                     Ordering::Greater => return Err(Error::TooManyArguments { expected, got }),
-                    _ => (),
+                    Ordering::Equal => (),
                 }
 
                 closure_env.extend(
@@ -70,7 +70,7 @@ pub fn eval(mut expr: Expr, mut env: Cow<'_, Env>) -> Result<Value> {
             }
             Expr::LetS { bindings, val } => {
                 let mut new_env = Env::from_outer(&env);
-                for (k, v) in bindings.into_iter() {
+                for (k, v) in bindings {
                     let v = eval(v, Cow::Borrowed(&new_env))?;
                     new_env.this.insert(k, MaybeWeak::new(RefCell::new(v)));
                 }
@@ -91,7 +91,6 @@ pub fn eval(mut expr: Expr, mut env: Cow<'_, Env>) -> Result<Value> {
                     .into_iter()
                     .map(|(k, v)| (k, eval(v, Cow::Borrowed(&inner_env))))
                     .collect::<Vec<_>>()
-                    .into_iter()
                 {
                     *new_env.this[&k].get().borrow_mut() = v?;
                 }
@@ -108,7 +107,7 @@ pub fn eval(mut expr: Expr, mut env: Cow<'_, Env>) -> Result<Value> {
                 let mut inner_env = new_env.clone();
                 inner_env.this.values_mut().for_each(|v| *v = v.weak());
 
-                for (k, v) in bindings.into_iter() {
+                for (k, v) in bindings {
                     let v = eval(v, Cow::Borrowed(&inner_env))?;
                     *new_env.this[&k].get().borrow_mut() = v;
                 }
@@ -132,7 +131,7 @@ pub fn eval(mut expr: Expr, mut env: Cow<'_, Env>) -> Result<Value> {
                 continue;
             }
             Expr::Begin { ops, val } => {
-                for op in ops.into_iter() {
+                for op in ops {
                     eval(op, Cow::Borrowed(&env))?;
                 }
                 break eval(*val, env)?;
