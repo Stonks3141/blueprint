@@ -45,7 +45,7 @@ fn parse_literal(ident: &str) -> Token {
                 .replace(r"\r", "\r"),
         ))
     } else if ident.starts_with(r"#\") {
-        Token::Literal(Value::Char(ident.chars().skip(2).next().unwrap()))
+        Token::Literal(Value::Char(ident.chars().nth(2).unwrap()))
     } else {
         match ident {
             "nil" => Token::Literal(Value::Nil),
@@ -56,7 +56,7 @@ fn parse_literal(ident: &str) -> Token {
     }
 }
 
-pub fn tokenize<I>(mut src: I, mut tokens: &mut Vec<Token>) -> I
+pub fn tokenize<I>(mut src: I, tokens: &mut Vec<Token>) -> I
 where
     I: Iterator<Item = char>,
 {
@@ -71,7 +71,7 @@ where
                     token.push('(');
                 } else {
                     tokens.push(Token::Opening);
-                    src = tokenize(src, &mut tokens);
+                    src = tokenize(src, tokens);
                 }
             }
             ')' => {
@@ -79,7 +79,7 @@ where
                     escaped = false;
                     token.push(')');
                 } else {
-                    if token.len() > 0 {
+                    if !token.is_empty() {
                         tokens.push(parse_literal(&token));
                         token.clear();
                     }
@@ -104,7 +104,7 @@ where
             c if c.is_whitespace() => {
                 if quoted {
                     token.push(c);
-                } else if token.len() > 0 {
+                } else if !token.is_empty() {
                     tokens.push(parse_literal(&token));
                     token.clear();
                 }
@@ -171,7 +171,7 @@ pub fn parse(sexp: Sexp) -> Expr {
                         name: val[0].clone().ident().unwrap(),
                         val: Box::new(Expr::Lambda {
                             args: val[1..]
-                                .into_iter()
+                                .iter()
                                 .map(|x| x.clone().ident().unwrap())
                                 .collect(),
                             val: Box::new(parse(a[2].clone())),
@@ -189,7 +189,7 @@ pub fn parse(sexp: Sexp) -> Expr {
                 },
                 "begin" => Expr::Begin {
                     ops: a[1..(a.len() - 1)]
-                        .into_iter()
+                        .iter()
                         .map(|x| parse(x.clone()))
                         .collect(),
                     val: Box::new(parse(a.last().unwrap().clone())),

@@ -16,19 +16,15 @@ pub enum Builtin {
 impl Builtin {
     pub fn eval(self, args: &[Value]) -> Value {
         match self {
-            Self::Add => Value::Number(
-                args.into_iter()
-                    .map(|val| val.clone().number().unwrap())
-                    .sum(),
-            ),
+            Self::Add => Value::Number(args.iter().map(|val| val.clone().number().unwrap()).sum()),
             Self::Sub => Value::Number(
-                args.into_iter()
+                args.iter()
                     .map(|val| val.clone().number().unwrap())
                     .reduce(|a, b| a - b)
                     .unwrap(),
             ),
             Self::Mul => Value::Number(
-                args.into_iter()
+                args.iter()
                     .map(|val| val.clone().number().unwrap())
                     .product(),
             ),
@@ -43,7 +39,7 @@ impl Builtin {
                 Value::Nil
             }
             Self::Newline => {
-                println!("");
+                println!();
                 Value::Nil
             }
             Self::Exit => {

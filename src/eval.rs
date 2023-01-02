@@ -2,7 +2,7 @@ use crate::{
     error::{Error, Result},
     Env, Expr, MaybeWeak, Value,
 };
-use std::{borrow::Cow, cell::RefCell};
+use std::{borrow::Cow, cell::RefCell, cmp::Ordering};
 
 pub fn eval(mut expr: Expr, mut env: Cow<'_, Env>) -> Result<Value> {
     Ok(loop {
@@ -25,12 +25,13 @@ pub fn eval(mut expr: Expr, mut env: Cow<'_, Env>) -> Result<Value> {
                         });
                     }
                 };
+
                 let expected = args.len();
                 let got = arg_vals.len();
-                if got > expected {
-                    return Err(Error::TooManyArguments { expected, got });
-                } else if got < expected {
-                    return Err(Error::NotEnoughArguments { expected, got });
+                match got.cmp(&expected) {
+                    Ordering::Less => return Err(Error::NotEnoughArguments { expected, got }),
+                    Ordering::Greater => return Err(Error::TooManyArguments { expected, got }),
+                    _ => (),
                 }
 
                 closure_env.extend(

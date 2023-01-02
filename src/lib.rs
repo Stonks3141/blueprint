@@ -193,7 +193,7 @@ impl<T> MaybeWeak<T> {
 
     fn weak(&self) -> Self {
         match self {
-            Self::Strong(rc) => Self::Weak(Rc::downgrade(&rc)),
+            Self::Strong(rc) => Self::Weak(Rc::downgrade(rc)),
             Self::Weak(weak) => Self::Weak(weak.clone()),
         }
     }
@@ -219,14 +219,14 @@ impl<'a> Env<'a> {
 
     fn from_outer(outer: &'a Env) -> Self {
         Self {
-            outer: Some(&outer),
+            outer: Some(outer),
             ..Default::default()
         }
     }
 
     fn layer_with(&'a self, bindings: HashMap<Ident, MaybeWeak<RefCell<Value>>>) -> Self {
         Self {
-            outer: Some(&self),
+            outer: Some(self),
             this: bindings,
         }
     }
