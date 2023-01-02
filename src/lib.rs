@@ -142,17 +142,17 @@ pub enum Expr {
 }
 
 fn unify(exprs: impl Iterator<Item = Expr>) -> Expr {
-    let mut bindings = HashMap::default();
+    let mut bindings = Vec::new();
     let mut ops = Vec::new();
     for expr in exprs {
         match expr {
             Expr::Define { name, val } => {
-                bindings.insert(name, *val);
+                bindings.push((name, *val));
             }
             expr => ops.push(expr),
         }
     }
-    Expr::Letrec {
+    Expr::LetrecS {
         bindings,
         val: Box::new(Expr::Begin {
             ops,
@@ -220,10 +220,6 @@ impl<'a> Env<'a> {
         }
     }
 
-    fn layer(&'a self) -> Self {
-        Self::from_outer(self)
-    }
-
     fn layer_with(&'a self, bindings: HashMap<Ident, MaybeWeak<RefCell<Value>>>) -> Self {
         Self {
             outer: Some(&self),
@@ -238,7 +234,7 @@ impl<'a> Env<'a> {
             .or_else(|| self.outer.as_ref().and_then(|outer| outer.get(ident)))
     }
 
-    // flatten the environment for closures since the outer env is one scope, improving lookup time.
+    // Flatten the environment for closures since the outer env is one scope, improving lookup time.
     fn flatten(&self) -> HashMap<Ident, MaybeWeak<RefCell<Value>>> {
         let mut env = self
             .outer
@@ -263,13 +259,14 @@ impl<'a> fmt::Display for Env<'a> {
     }
 }
 
-pub fn eval(mut expr: Expr, mut env: Env) -> Value {
+pub fn eval(mut expr: Expr, mut env: &Env) -> Value {
+    static mut ENV: Option<Env> = None;
     loop {
         match expr {
             Expr::Application { procedure, args } => {
-                let arg_vals = args.into_iter().map(|arg| eval(arg, env.layer()));
+                let arg_vals = args.into_iter().map(|arg| eval(arg, env));
 
-                let procedure = eval(*procedure, env.layer());
+                let procedure = eval(*procedure, env);
 
                 let (mut closure_env, args, val) = match procedure {
                     Value::Closure { env, args, val } => (env, args, val),
@@ -289,10 +286,13 @@ pub fn eval(mut expr: Expr, mut env: Env) -> Value {
                         .zip(arg_vals.map(|x| MaybeWeak::new(RefCell::new(x)))),
                 );
 
-                env = Env {
-                    outer: None,
-                    this: closure_env,
-                };
+                unsafe {
+                    ENV = Some(Env {
+                        outer: None,
+                        this: closure_env,
+                    });
+                    env = ENV.as_ref().unwrap();
+                }
                 expr = *val;
                 continue;
             }
@@ -308,20 +308,20 @@ pub fn eval(mut expr: Expr, mut env: Env) -> Value {
                     bindings
                         .into_iter()
                         .map(|(k, v)| {
-                            let v = eval(v, env.layer());
+                            let v = eval(v, env);
                             (k, MaybeWeak::new(RefCell::new(v)))
                         })
                         .collect(),
                 );
-                break eval(*val, new_env);
+                break eval(*val, &new_env);
             }
             Expr::LetS { bindings, val } => {
                 let mut new_env = Env::from_outer(&env);
                 for (k, v) in bindings.into_iter() {
-                    let v = eval(v, new_env.layer());
+                    let v = eval(v, &new_env);
                     new_env.this.insert(k, MaybeWeak::new(RefCell::new(v)));
                 }
-                break eval(*val, new_env);
+                break eval(*val, &new_env);
             }
             Expr::Letrec { bindings, val } => {
                 let new_env = Env {
@@ -336,11 +336,11 @@ pub fn eval(mut expr: Expr, mut env: Env) -> Value {
 
                 bindings
                     .into_iter()
-                    .map(|(k, v)| (k, eval(v, inner_env.layer())))
+                    .map(|(k, v)| (k, eval(v, &inner_env)))
                     .collect::<Vec<_>>()
                     .into_iter() // ensure that evaluation always occurs before binding
                     .for_each(|(k, v)| *new_env.this[&k].get().borrow_mut() = v);
-                break eval(*val, new_env);
+                break eval(*val, &new_env);
             }
             Expr::LetrecS { bindings, val } => {
                 let new_env = Env {
@@ -354,16 +354,16 @@ pub fn eval(mut expr: Expr, mut env: Env) -> Value {
                 inner_env.this.values_mut().for_each(|v| *v = v.weak());
 
                 for (k, v) in bindings.into_iter() {
-                    let v = eval(v, Env::from_outer(&inner_env));
+                    let v = eval(v, &inner_env);
                     *new_env.this[&k].get().borrow_mut() = v;
                 }
-                break eval(*val, new_env);
+                break eval(*val, &new_env);
             }
             Expr::Define { .. } => {
                 panic!("`define`s should have been removed by the `unify` function")
             }
             Expr::If { predicate, t, f } => {
-                let predicate = eval(*predicate, env.layer());
+                let predicate = eval(*predicate, env);
                 if predicate == Value::TRUE {
                     expr = *t;
                 } else if predicate == Value::FALSE {
@@ -375,12 +375,12 @@ pub fn eval(mut expr: Expr, mut env: Env) -> Value {
             }
             Expr::Begin { ops, val } => {
                 ops.into_iter().for_each(|op| {
-                    eval(op, env.layer());
+                    eval(op, env);
                 });
-                break eval(*val, env.layer());
+                break eval(*val, env);
             }
             Expr::Set { ident, val } => {
-                *env.get(&ident).unwrap().borrow_mut() = eval(*val, env.layer());
+                *env.get(&ident).unwrap().borrow_mut() = eval(*val, env);
                 break Value::Nil;
             }
             Expr::Value(val) => break val,
@@ -404,6 +404,6 @@ pub fn exec(prgm: &str) {
     println!("Program output:\n");
 
     let time = Instant::now();
-    eval(ast, Env::new());
+    eval(ast, &Env::new());
     println!("\nEvaluation time: {:?}", time.elapsed());
 }
