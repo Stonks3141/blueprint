@@ -1,9 +1,11 @@
 mod builtin;
 pub mod error;
-pub mod eval;
+mod eval;
 pub mod parse;
 #[cfg(test)]
 mod tests;
+
+pub use eval::eval;
 
 use builtin::Builtin;
 use error::{Error, Result};
@@ -190,25 +192,25 @@ impl<T: PartialEq<T>> PartialEq<MaybeWeak<T>> for MaybeWeak<T> {
 }
 
 impl<T> MaybeWeak<T> {
-    fn new(inner: T) -> Self {
+    pub fn new(inner: T) -> Self {
         Self::Strong(Rc::new(inner))
     }
 
-    fn strong(&self) -> Option<Self> {
+    pub fn strong(&self) -> Option<Self> {
         match self {
             Self::Strong(rc) => Some(Self::Strong(rc.clone())),
             Self::Weak(weak) => weak.upgrade().map(Self::Strong),
         }
     }
 
-    fn weak(&self) -> Self {
+    pub fn weak(&self) -> Self {
         match self {
             Self::Strong(rc) => Self::Weak(Rc::downgrade(rc)),
             Self::Weak(weak) => Self::Weak(weak.clone()),
         }
     }
 
-    fn get(&self) -> Rc<T> {
+    pub fn get(&self) -> Rc<T> {
         let Self::Strong(rc) = self.strong().unwrap() else {
             unreachable!();
         };
@@ -218,8 +220,8 @@ impl<T> MaybeWeak<T> {
 
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Env<'a> {
-    outer: Option<&'a Env<'a>>,
-    this: HashMap<Ident, MaybeWeak<RefCell<Value>>>,
+    pub outer: Option<&'a Env<'a>>,
+    pub this: HashMap<Ident, MaybeWeak<RefCell<Value>>>,
 }
 
 impl<'a> Env<'a> {
@@ -276,6 +278,6 @@ pub fn exec(prgm: &str) -> Result<()> {
     let prgm: String = prgm.lines().filter(|line| !line.starts_with(';')).collect();
     let exprs = parse::parse_prgm(&prgm).map_err(|_| Error::Syntax)?.1;
     let ast = unify(exprs.into_iter());
-    eval::eval(ast, Cow::Owned(Env::new()))?;
+    eval(ast, Cow::Owned(Env::new()))?;
     Ok(())
 }

@@ -157,6 +157,7 @@ fn parse_builtin(i: &str) -> IResult<&'_ str, Builtin, VerboseError<&'_ str>> {
         value(Builtin::Or, tag("or")),
         value(Builtin::Display, tag("display")),
         value(Builtin::Newline, tag("newline")),
+        value(Builtin::Exit, tag("exit")),
     ))(i)
 }
 

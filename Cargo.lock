@@ -15,6 +15,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
+name = "blueprint-scm"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "clap",
+ "fxhash",
+ "nom",
+ "thiserror",
+]
+
+[[package]]
 name = "byteorder"
 version = "1.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -186,17 +197,6 @@ dependencies = [
  "libc",
  "linux-raw-sys",
  "windows-sys",
-]
-
-[[package]]
-name = "schemers"
-version = "0.0.1"
-dependencies = [
- "anyhow",
- "clap",
- "fxhash",
- "nom",
- "thiserror",
 ]
 
 [[package]]
