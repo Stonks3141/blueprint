@@ -27,7 +27,7 @@ pub enum Value {
     String(String),
     Builtin(Builtin),
     Closure {
-        env: Env,
+        env: HashMap<Ident, MaybeWeak<RefCell<Value>>>,
         args: Vec<Ident>,
         val: Box<Expr>,
     },
@@ -169,6 +169,12 @@ pub enum MaybeWeak<T> {
     Weak(Weak<T>),
 }
 
+impl<T: PartialEq<T>> PartialEq<MaybeWeak<T>> for MaybeWeak<T> {
+    fn eq(&self, other: &MaybeWeak<T>) -> bool {
+        self.get() == other.get()
+    }
+}
+
 impl<T> MaybeWeak<T> {
     fn new(inner: T) -> Self {
         Self::Strong(Rc::new(inner))
@@ -196,43 +202,31 @@ impl<T> MaybeWeak<T> {
     }
 }
 
-#[derive(Debug, Default, Clone)]
-pub struct Env {
-    outer: Option<Box<Env>>,
+#[derive(Debug, Default, Clone, PartialEq)]
+pub struct Env<'a> {
+    outer: Option<&'a Env<'a>>,
     this: HashMap<Ident, MaybeWeak<RefCell<Value>>>,
 }
 
-impl PartialEq<Env> for Env {
-    fn eq(&self, other: &Env) -> bool {
-        self.this
-            .iter()
-            .zip(other.this.iter())
-            .fold(true, |acc, (a, b)| {
-                a.0 == b.0 && *a.1.get() == *b.1.get() && acc
-            })
-            && self.outer == other.outer
-    }
-}
-
-impl Env {
+impl<'a> Env<'a> {
     pub fn new() -> Self {
         Self::default()
     }
 
-    fn from_outer(outer: Env) -> Self {
+    fn from_outer(outer: &'a Env) -> Self {
         Self {
-            outer: Some(Box::new(outer)),
+            outer: Some(&outer),
             ..Default::default()
         }
     }
 
-    fn layer(&self) -> Self {
-        Self::from_outer(self.clone())
+    fn layer(&'a self) -> Self {
+        Self::from_outer(self)
     }
 
-    fn layer_with(&self, bindings: HashMap<Ident, MaybeWeak<RefCell<Value>>>) -> Self {
+    fn layer_with(&'a self, bindings: HashMap<Ident, MaybeWeak<RefCell<Value>>>) -> Self {
         Self {
-            outer: Some(Box::new(self.clone())),
+            outer: Some(&self),
             this: bindings,
         }
     }
@@ -245,19 +239,19 @@ impl Env {
     }
 
     // flatten the environment for closures since the outer env is one scope, improving lookup time.
-    fn flatten(&self) -> Self {
+    fn flatten(&self) -> HashMap<Ident, MaybeWeak<RefCell<Value>>> {
         let mut env = self
             .outer
             .as_ref()
             .map(|env| env.flatten())
             .unwrap_or_default();
 
-        env.this.extend(self.this.clone().into_iter());
+        env.extend(self.this.clone().into_iter());
         env
     }
 }
 
-impl fmt::Display for Env {
+impl<'a> fmt::Display for Env<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for (k, v) in self.this.iter() {
             write!(f, "{}: {}\n\n", k, v.get().borrow())?;
@@ -290,12 +284,15 @@ pub fn eval(mut expr: Expr, mut env: Env) -> Value {
                     panic!("Not enough arguments: expected {}, got {}", expected, got);
                 }
 
-                closure_env.this.extend(
+                closure_env.extend(
                     args.into_iter()
                         .zip(arg_vals.map(|x| MaybeWeak::new(RefCell::new(x)))),
                 );
 
-                env = closure_env;
+                env = Env {
+                    outer: None,
+                    this: closure_env,
+                };
                 expr = *val;
                 continue;
             }
@@ -307,7 +304,7 @@ pub fn eval(mut expr: Expr, mut env: Env) -> Value {
                 };
             }
             Expr::Let { bindings, val } => {
-                env = env.layer_with(
+                let new_env = env.layer_with(
                     bindings
                         .into_iter()
                         .map(|(k, v)| {
@@ -316,24 +313,25 @@ pub fn eval(mut expr: Expr, mut env: Env) -> Value {
                         })
                         .collect(),
                 );
-                break eval(*val, env);
+                break eval(*val, new_env);
             }
             Expr::LetS { bindings, val } => {
-                env = Env::from_outer(env);
+                let mut new_env = Env::from_outer(&env);
                 for (k, v) in bindings.into_iter() {
-                    let v = eval(v, env.layer());
-                    env.this.insert(k, MaybeWeak::new(RefCell::new(v)));
+                    let v = eval(v, new_env.layer());
+                    new_env.this.insert(k, MaybeWeak::new(RefCell::new(v)));
                 }
-                break eval(*val, env.clone());
+                break eval(*val, new_env);
             }
             Expr::Letrec { bindings, val } => {
-                env = Env::from_outer(env);
-                env.this.extend(
-                    bindings
-                        .keys()
-                        .map(|k| (k.clone(), MaybeWeak::new(RefCell::new(Value::Nil)))),
-                );
-                let mut inner_env = env.clone();
+                let new_env = Env {
+                    outer: Some(&env),
+                    this: bindings
+                        .iter()
+                        .map(|(k, _)| (k.clone(), MaybeWeak::new(RefCell::new(Value::Nil))))
+                        .collect(),
+                };
+                let mut inner_env = new_env.clone();
                 inner_env.this.values_mut().for_each(|v| *v = v.weak());
 
                 bindings
@@ -341,24 +339,25 @@ pub fn eval(mut expr: Expr, mut env: Env) -> Value {
                     .map(|(k, v)| (k, eval(v, inner_env.layer())))
                     .collect::<Vec<_>>()
                     .into_iter() // ensure that evaluation always occurs before binding
-                    .for_each(|(k, v)| *env.this[&k].get().borrow_mut() = v);
-                break eval(*val, env.clone());
+                    .for_each(|(k, v)| *new_env.this[&k].get().borrow_mut() = v);
+                break eval(*val, new_env);
             }
             Expr::LetrecS { bindings, val } => {
-                env = Env::from_outer(env);
-                env.this.extend(
-                    bindings
+                let new_env = Env {
+                    outer: Some(&env),
+                    this: bindings
                         .iter()
-                        .map(|(k, _)| (k.clone(), MaybeWeak::new(RefCell::new(Value::Nil)))),
-                );
-                let mut inner_env = env.clone();
+                        .map(|(k, _)| (k.clone(), MaybeWeak::new(RefCell::new(Value::Nil))))
+                        .collect(),
+                };
+                let mut inner_env = new_env.clone();
                 inner_env.this.values_mut().for_each(|v| *v = v.weak());
 
                 for (k, v) in bindings.into_iter() {
-                    let v = eval(v, Env::from_outer(inner_env.clone()));
-                    *env.this[&k].get().borrow_mut() = v;
+                    let v = eval(v, Env::from_outer(&inner_env));
+                    *new_env.this[&k].get().borrow_mut() = v;
                 }
-                break eval(*val, env.clone());
+                break eval(*val, new_env);
             }
             Expr::Define { .. } => {
                 panic!("`define`s should have been removed by the `unify` function")
