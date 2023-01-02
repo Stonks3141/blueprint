@@ -10,6 +10,7 @@ pub enum Builtin {
     Or,
     Display,
     Newline,
+    Exit,
 }
 
 impl Builtin {
@@ -44,6 +45,15 @@ impl Builtin {
             Self::Newline => {
                 println!("");
                 Value::Nil
+            }
+            Self::Exit => {
+                if args[0] == Value::TRUE {
+                    std::process::exit(0);
+                } else if args[0] == Value::FALSE {
+                    std::process::exit(1);
+                } else {
+                    panic!();
+                }
             }
         }
     }
