@@ -2,7 +2,6 @@ mod builtin;
 pub mod error;
 pub mod eval;
 pub mod parse;
-mod parse_old;
 #[cfg(test)]
 mod tests;
 
@@ -14,7 +13,6 @@ use std::{
     cell::RefCell,
     fmt,
     rc::{Rc, Weak},
-    time::Instant,
 };
 
 pub type Ident = String;
@@ -42,11 +40,21 @@ impl Value {
     const FALSE: Self = Self::Boolean(false);
     const TRUE: Self = Self::Boolean(true);
 
-    fn number(self) -> Result<f64> {
+    fn number(&self) -> Result<f64> {
         match self {
-            Self::Number(x) => Ok(x),
+            Self::Number(x) => Ok(*x),
             val => Err(Error::Value {
                 expected: "number".to_string(),
+                found: format!("{val}"),
+            }),
+        }
+    }
+
+    fn boolean(&self) -> Result<bool> {
+        match self {
+            Self::Boolean(x) => Ok(*x),
+            val => Err(Error::Value {
+                expected: "boolean".to_string(),
                 found: format!("{val}"),
             }),
         }
@@ -265,14 +273,9 @@ impl<'a> fmt::Display for Env<'a> {
 }
 
 pub fn exec(prgm: &str) -> Result<()> {
-    let time = Instant::now();
-    let exprs = parse::parse_prgm(prgm).map_err(|_| Error::Syntax)?.1;
+    let prgm: String = prgm.lines().filter(|line| !line.starts_with(';')).collect();
+    let exprs = parse::parse_prgm(&prgm).map_err(|_| Error::Syntax)?.1;
     let ast = unify(exprs.into_iter());
-    println!("Parsing time: {:?}", time.elapsed());
-    println!("Program output:\n");
-
-    let time = Instant::now();
     eval::eval(ast, Cow::Owned(Env::new()))?;
-    println!("\nEvaluation time: {:?}", time.elapsed());
     Ok(())
 }

@@ -1,20 +1,21 @@
-const PRGM: &str = r#"
-;(define (sum n)
-;  (letrec ((sum-inner (lambda (i acc)
-;    (if (= i n)
-;      (+ acc i)
-;      (sum-inner (+ i 1) (+ acc i))))))
-;  (sum-inner 1 0)))
-;
-;(display (sum 100000))
+use clap::{arg, command, value_parser, Command};
+use std::{fs, path::PathBuf};
 
-(+ 42 "hi")
-"#;
+fn cmd() -> Command {
+    command!()
+        .after_help("Run with no arguments to get a REPL.")
+        .arg(arg!(path: [PATH] "The Scheme file to interpret").value_parser(value_parser!(PathBuf)))
+}
 
-fn main() {
-    let prgm: String = PRGM.lines().filter(|line| !line.starts_with(';')).collect();
-    if let Err(e) = schemers::exec(&prgm) {
-        println!("{}", e);
-        std::process::exit(1);
+fn main() -> anyhow::Result<()> {
+    if let Some(path) = cmd().get_matches().get_one::<PathBuf>("path") {
+        let prgm = fs::read_to_string(path)?;
+        if let Err(e) = schemers::exec(&prgm) {
+            println!("{}", e);
+            std::process::exit(1);
+        }
+    } else {
+        // TODO: repl
     }
+    Ok(())
 }

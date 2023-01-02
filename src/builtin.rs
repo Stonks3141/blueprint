@@ -1,7 +1,4 @@
-use crate::{
-    error::{Error, Result},
-    Value,
-};
+use crate::{error::Result, Value};
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Builtin {
@@ -51,15 +48,13 @@ impl Builtin {
                 Value::Nil
             }
             Self::Exit => {
-                if args[0] == Value::TRUE {
+                let Some(ok) = args.get(0) else {
                     std::process::exit(0);
-                } else if args[0] == Value::FALSE {
-                    std::process::exit(1);
+                };
+                if ok.boolean()? {
+                    std::process::exit(0);
                 } else {
-                    return Err(Error::Value {
-                        expected: "boolean".to_string(),
-                        found: format!("{}", args[0]),
-                    });
+                    std::process::exit(1);
                 }
             }
         })

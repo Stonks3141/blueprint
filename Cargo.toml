@@ -7,3 +7,5 @@ edition = "2021"
 fxhash = "0.2"
 nom = "7.1"
 thiserror = "1.0"
+clap = { version = "4.0", features = ["cargo"] }
+anyhow = "1.0"
