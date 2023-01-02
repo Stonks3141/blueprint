@@ -10,6 +10,8 @@ use std::{
 mod builtin;
 mod parse;
 mod parse_old;
+#[cfg(test)]
+mod tests;
 
 pub type Ident = String;
 
@@ -23,12 +25,12 @@ pub enum Value {
     Symbol(Ident),
     Char(char),
     String(String),
+    Builtin(Builtin),
     Closure {
         env: Env,
         args: Vec<Ident>,
         val: Box<Expr>,
     },
-    Builtin(Builtin),
     Nil,
 }
 
@@ -113,6 +115,10 @@ pub enum Expr {
         bindings: HashMap<Ident, Expr>,
         val: Box<Expr>,
     },
+    LetrecS {
+        bindings: Vec<(Ident, Expr)>,
+        val: Box<Expr>,
+    },
     Define {
         name: Ident,
         val: Box<Expr>,
@@ -155,6 +161,8 @@ fn unify(exprs: impl Iterator<Item = Expr>) -> Expr {
     }
 }
 
+// This struct is necessary so that closures bound in `letrec` expressions will
+// only hold `Weak` references to themselves, preventing a reference cycle.
 #[derive(Debug, Clone)]
 pub enum MaybeWeak<T> {
     Strong(Rc<T>),
@@ -214,7 +222,18 @@ impl Env {
     fn from_outer(outer: Env) -> Self {
         Self {
             outer: Some(Box::new(outer)),
-            this: HashMap::default(),
+            ..Default::default()
+        }
+    }
+
+    fn layer(&self) -> Self {
+        Self::from_outer(self.clone())
+    }
+
+    fn layer_with(&self, bindings: HashMap<Ident, MaybeWeak<RefCell<Value>>>) -> Self {
+        Self {
+            outer: Some(Box::new(self.clone())),
+            this: bindings,
         }
     }
 
@@ -225,15 +244,16 @@ impl Env {
             .or_else(|| self.outer.as_ref().and_then(|outer| outer.get(ident)))
     }
 
-    fn flatten(&self) -> HashMap<Ident, MaybeWeak<RefCell<Value>>> {
-        let mut map = self
+    // flatten the environment for closures since the outer env is one scope, improving lookup time.
+    fn flatten(&self) -> Self {
+        let mut env = self
             .outer
             .as_ref()
             .map(|env| env.flatten())
             .unwrap_or_default();
 
-        map.extend(self.this.clone().into_iter());
-        map
+        env.this.extend(self.this.clone().into_iter());
+        env
     }
 }
 
@@ -253,64 +273,55 @@ pub fn eval(mut expr: Expr, mut env: Env) -> Value {
     loop {
         match expr {
             Expr::Application { procedure, args } => {
-                let args = args
-                    .into_iter()
-                    .map(|arg| eval(arg, Env::from_outer(env.clone())))
-                    .collect::<Vec<_>>();
+                let arg_vals = args.into_iter().map(|arg| eval(arg, env.layer()));
 
-                let procedure = eval(*procedure, Env::from_outer(env.clone()));
+                let procedure = eval(*procedure, env.layer());
 
-                let (closure_env, arg_names, val) = match procedure {
-                    Value::Closure { env, args, val } => (env, args, *val),
-                    Value::Builtin(builtin) => break builtin.eval(&args),
+                let (mut closure_env, args, val) = match procedure {
+                    Value::Closure { env, args, val } => (env, args, val),
+                    Value::Builtin(builtin) => break builtin.eval(&arg_vals.collect::<Vec<_>>()),
                     _ => panic!("Expected closure or builtin, found `{}`", procedure),
                 };
-                env = closure_env;
-
-                let expected = arg_names.len();
-                let got = args.len();
+                let expected = args.len();
+                let got = arg_vals.len();
                 if got > expected {
                     panic!("Too many arguments: expected {}, got {}", expected, got);
                 } else if got < expected {
                     panic!("Not enough arguments: expected {}, got {}", expected, got);
                 }
 
-                env.this.extend(
-                    arg_names
-                        .into_iter()
-                        .zip(args.into_iter().map(|x| MaybeWeak::new(RefCell::new(x)))),
+                closure_env.this.extend(
+                    args.into_iter()
+                        .zip(arg_vals.map(|x| MaybeWeak::new(RefCell::new(x)))),
                 );
 
-                expr = val;
+                env = closure_env;
+                expr = *val;
                 continue;
             }
             Expr::Lambda { args, val } => {
                 break Value::Closure {
-                    env: Env {
-                        outer: None,
-                        this: env.flatten(),
-                    },
+                    env: env.flatten(),
                     args,
                     val,
                 };
             }
             Expr::Let { bindings, val } => {
-                env = Env {
-                    this: bindings
+                env = env.layer_with(
+                    bindings
                         .into_iter()
                         .map(|(k, v)| {
-                            let v = eval(v, Env::from_outer(env.clone()));
+                            let v = eval(v, env.layer());
                             (k, MaybeWeak::new(RefCell::new(v)))
                         })
                         .collect(),
-                    outer: Some(Box::new(env)),
-                };
-                break eval(*val, Env::from_outer(env.clone()));
+                );
+                break eval(*val, env);
             }
             Expr::LetS { bindings, val } => {
                 env = Env::from_outer(env);
                 for (k, v) in bindings.into_iter() {
-                    let v = eval(v, Env::from_outer(env.clone()));
+                    let v = eval(v, env.layer());
                     env.this.insert(k, MaybeWeak::new(RefCell::new(v)));
                 }
                 break eval(*val, env.clone());
@@ -325,6 +336,24 @@ pub fn eval(mut expr: Expr, mut env: Env) -> Value {
                 let mut inner_env = env.clone();
                 inner_env.this.values_mut().for_each(|v| *v = v.weak());
 
+                bindings
+                    .into_iter()
+                    .map(|(k, v)| (k, eval(v, inner_env.layer())))
+                    .collect::<Vec<_>>()
+                    .into_iter() // ensure that evaluation always occurs before binding
+                    .for_each(|(k, v)| *env.this[&k].get().borrow_mut() = v);
+                break eval(*val, env.clone());
+            }
+            Expr::LetrecS { bindings, val } => {
+                env = Env::from_outer(env);
+                env.this.extend(
+                    bindings
+                        .iter()
+                        .map(|(k, _)| (k.clone(), MaybeWeak::new(RefCell::new(Value::Nil)))),
+                );
+                let mut inner_env = env.clone();
+                inner_env.this.values_mut().for_each(|v| *v = v.weak());
+
                 for (k, v) in bindings.into_iter() {
                     let v = eval(v, Env::from_outer(inner_env.clone()));
                     *env.this[&k].get().borrow_mut() = v;
@@ -335,7 +364,7 @@ pub fn eval(mut expr: Expr, mut env: Env) -> Value {
                 panic!("`define`s should have been removed by the `unify` function")
             }
             Expr::If { predicate, t, f } => {
-                let predicate = eval(*predicate, Env::from_outer(env.clone()));
+                let predicate = eval(*predicate, env.layer());
                 if predicate == Value::TRUE {
                     expr = *t;
                 } else if predicate == Value::FALSE {
@@ -347,12 +376,12 @@ pub fn eval(mut expr: Expr, mut env: Env) -> Value {
             }
             Expr::Begin { ops, val } => {
                 ops.into_iter().for_each(|op| {
-                    eval(op, Env::from_outer(env.clone()));
+                    eval(op, env.layer());
                 });
-                break eval(*val, Env::from_outer(env.clone()));
+                break eval(*val, env.layer());
             }
             Expr::Set { ident, val } => {
-                *env.get(&ident).unwrap().borrow_mut() = eval(*val, Env::from_outer(env.clone()));
+                *env.get(&ident).unwrap().borrow_mut() = eval(*val, env.layer());
                 break Value::Nil;
             }
             Expr::Value(val) => break val,

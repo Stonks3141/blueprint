@@ -237,7 +237,23 @@ fn parse_letrec(i: &str) -> IResult<&'_ str, Expr, VerboseError<&'_ str>> {
                 parse_expr,
             )),
         ),
-        |(bindings, val)| Expr::LetS {
+        |(bindings, val)| Expr::Letrec {
+            bindings: bindings.into_iter().collect(),
+            val: Box::new(val),
+        },
+    ))(i)
+}
+
+fn parse_letrecs(i: &str) -> IResult<&'_ str, Expr, VerboseError<&'_ str>> {
+    sexp(map(
+        preceded(
+            tag("letrec*"),
+            cut(pair(
+                sexp(many1(sexp(pair(parse_ident, parse_expr)))),
+                parse_expr,
+            )),
+        ),
+        |(bindings, val)| Expr::LetrecS {
             bindings: bindings.into_iter().collect(),
             val: Box::new(val),
         },
@@ -303,6 +319,7 @@ pub fn parse_expr(i: &str) -> IResult<&'_ str, Expr, VerboseError<&'_ str>> {
         discard0,
         alt((
             parse_lambda,
+            parse_letrecs,
             parse_letrec,
             parse_lets,
             parse_let,
