@@ -1,13 +1,20 @@
 const PRGM: &str = r#"
-(define (sum i acc max)
-  (if (= i max)
-    (+ acc i)
-    (sum (+ i 1) (+ acc i) max)))
+;(define (sum n)
+;  (letrec ((sum-inner (lambda (i acc)
+;    (if (= i n)
+;      (+ acc i)
+;      (sum-inner (+ i 1) (+ acc i))))))
+;  (sum-inner 1 0)))
+;
+;(display (sum 100000))
 
-(display (sum 1 0 100000))
+(if '() '() '()
 "#;
 
 fn main() {
     let prgm: String = PRGM.lines().filter(|line| !line.starts_with(';')).collect();
-    schemers::exec(&prgm);
+    if let Err(e) = schemers::exec(&prgm) {
+        println!("{}", e);
+        std::process::exit(1);
+    }
 }

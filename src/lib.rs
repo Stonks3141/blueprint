@@ -1,4 +1,13 @@
+mod builtin;
+pub mod error;
+pub mod eval;
+pub mod parse;
+mod parse_old;
+#[cfg(test)]
+mod tests;
+
 use builtin::Builtin;
+use error::{Error, Result};
 use fxhash::FxHashMap as HashMap;
 use std::{
     borrow::Cow,
@@ -7,12 +16,6 @@ use std::{
     rc::{Rc, Weak},
     time::Instant,
 };
-
-mod builtin;
-mod parse;
-mod parse_old;
-#[cfg(test)]
-mod tests;
 
 pub type Ident = String;
 
@@ -260,150 +263,15 @@ impl<'a> fmt::Display for Env<'a> {
     }
 }
 
-pub fn eval(mut expr: Expr, mut env: Cow<'_, Env>) -> Value {
-    loop {
-        match expr {
-            Expr::Application { procedure, args } => {
-                let arg_vals = args.into_iter().map(|arg| eval(arg, Cow::Borrowed(&env)));
-
-                let procedure = eval(*procedure, Cow::Borrowed(&env));
-
-                let (mut closure_env, args, val) = match procedure {
-                    Value::Closure { env, args, val } => (env, args, val),
-                    Value::Builtin(builtin) => break builtin.eval(&arg_vals.collect::<Vec<_>>()),
-                    _ => panic!("Expected closure or builtin, found `{}`", procedure),
-                };
-                let expected = args.len();
-                let got = arg_vals.len();
-                if got > expected {
-                    panic!("Too many arguments: expected {}, got {}", expected, got);
-                } else if got < expected {
-                    panic!("Not enough arguments: expected {}, got {}", expected, got);
-                }
-
-                closure_env.extend(
-                    args.into_iter()
-                        .zip(arg_vals.map(|x| MaybeWeak::new(RefCell::new(x)))),
-                );
-
-                env = Cow::Owned(Env {
-                    outer: None,
-                    this: closure_env,
-                });
-                expr = *val;
-                continue;
-            }
-            Expr::Lambda { args, val } => {
-                break Value::Closure {
-                    env: env.flatten(),
-                    args,
-                    val,
-                };
-            }
-            Expr::Let { bindings, val } => {
-                let new_env = env.layer_with(
-                    bindings
-                        .into_iter()
-                        .map(|(k, v)| {
-                            let v = eval(v, Cow::Borrowed(&env));
-                            (k, MaybeWeak::new(RefCell::new(v)))
-                        })
-                        .collect(),
-                );
-                break eval(*val, Cow::Borrowed(&new_env));
-            }
-            Expr::LetS { bindings, val } => {
-                let mut new_env = Env::from_outer(&env);
-                for (k, v) in bindings.into_iter() {
-                    let v = eval(v, Cow::Borrowed(&new_env));
-                    new_env.this.insert(k, MaybeWeak::new(RefCell::new(v)));
-                }
-                break eval(*val, Cow::Borrowed(&new_env));
-            }
-            Expr::Letrec { bindings, val } => {
-                let new_env = Env {
-                    outer: Some(&env),
-                    this: bindings
-                        .iter()
-                        .map(|(k, _)| (k.clone(), MaybeWeak::new(RefCell::new(Value::Nil))))
-                        .collect(),
-                };
-                let mut inner_env = new_env.clone();
-                inner_env.this.values_mut().for_each(|v| *v = v.weak());
-
-                bindings
-                    .into_iter()
-                    .map(|(k, v)| (k, eval(v, Cow::Borrowed(&inner_env))))
-                    .collect::<Vec<_>>()
-                    .into_iter() // ensure that evaluation always occurs before binding
-                    .for_each(|(k, v)| *new_env.this[&k].get().borrow_mut() = v);
-                break eval(*val, Cow::Borrowed(&new_env));
-            }
-            Expr::LetrecS { bindings, val } => {
-                let new_env = Env {
-                    outer: Some(&env),
-                    this: bindings
-                        .iter()
-                        .map(|(k, _)| (k.clone(), MaybeWeak::new(RefCell::new(Value::Nil))))
-                        .collect(),
-                };
-                let mut inner_env = new_env.clone();
-                inner_env.this.values_mut().for_each(|v| *v = v.weak());
-
-                for (k, v) in bindings.into_iter() {
-                    let v = eval(v, Cow::Borrowed(&inner_env));
-                    *new_env.this[&k].get().borrow_mut() = v;
-                }
-                break eval(*val, Cow::Borrowed(&new_env));
-                // env = Cow::Owned(new_env);
-                // expr = *val;
-                // continue;
-            }
-            Expr::Define { .. } => {
-                panic!("`define`s should have been removed by the `unify` function")
-            }
-            Expr::If { predicate, t, f } => {
-                let predicate = eval(*predicate, Cow::Borrowed(&env));
-                if predicate == Value::TRUE {
-                    expr = *t;
-                } else if predicate == Value::FALSE {
-                    expr = *f;
-                } else {
-                    panic!("If conditon must return a boolean")
-                }
-                continue;
-            }
-            Expr::Begin { ops, val } => {
-                ops.into_iter().for_each(|op| {
-                    eval(op, Cow::Borrowed(&env));
-                });
-                break eval(*val, env);
-            }
-            Expr::Set { ident, val } => {
-                *env.get(&ident).unwrap().borrow_mut() = eval(*val, Cow::Borrowed(&env));
-                break Value::Nil;
-            }
-            Expr::Value(val) => break val,
-            Expr::Ident(ident) => {
-                break (*env
-                    .get(&ident)
-                    .expect(&format!("Unbound variable: '{}'", ident)))
-                .clone()
-                .into_inner();
-            }
-            Expr::Builtin(builtin) => break Value::Builtin(builtin),
-        }
-    }
-}
-
-pub fn exec(prgm: &str) {
+pub fn exec(prgm: &str) -> Result<()> {
     let time = Instant::now();
-    let exprs = parse::parse_prgm(prgm).unwrap().1;
+    let exprs = parse::parse_prgm(prgm).map_err(|_| Error::Syntax)?.1;
     let ast = unify(exprs.into_iter());
     println!("Parsing time: {:?}", time.elapsed());
     println!("Program output:\n");
 
     let time = Instant::now();
-    eval(ast, Cow::Owned(Env::new()));
+    eval::eval(ast, Cow::Owned(Env::new()))?;
     println!("\nEvaluation time: {:?}", time.elapsed());
+    Ok(())
 }

@@ -11,7 +11,10 @@ fn fib() {
   (fib 10))
 "#;
     let expr = parse_expr(prgm).unwrap().1;
-    assert_eq!(eval(expr, Cow::Owned(Env::new())), Value::Number(55.0));
+    assert_eq!(
+        eval(expr, Cow::Owned(Env::new())).unwrap(),
+        Value::Number(55.0)
+    );
 }
 
 // test for tail call optimization
@@ -25,7 +28,10 @@ fn sum() {
   (sum 1 0 1000))
 "#;
     let expr = parse_expr(prgm).unwrap().1;
-    assert_eq!(eval(expr, Cow::Owned(Env::new())), Value::Number(500500.0));
+    assert_eq!(
+        eval(expr, Cow::Owned(Env::new())).unwrap(),
+        Value::Number(500500.0)
+    );
 }
 
 #[test]
@@ -36,7 +42,10 @@ fn closure() {
          (my-foo 5)))
 "#;
     let expr = parse_expr(prgm).unwrap().1;
-    assert_eq!(eval(expr, Cow::Owned(Env::new())), Value::Number(47.0));
+    assert_eq!(
+        eval(expr, Cow::Owned(Env::new())).unwrap(),
+        Value::Number(47.0)
+    );
 }
 
 #[test]
@@ -47,5 +56,8 @@ fn nested_let() {
     bar))
 "#;
     let expr = parse_expr(prgm).unwrap().1;
-    assert_eq!(eval(expr, Cow::Owned(Env::new())), Value::Number(5.0));
+    assert_eq!(
+        eval(expr, Cow::Owned(Env::new())).unwrap(),
+        Value::Number(5.0)
+    );
 }
