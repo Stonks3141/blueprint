@@ -42,10 +42,13 @@ impl Value {
     const FALSE: Self = Self::Boolean(false);
     const TRUE: Self = Self::Boolean(true);
 
-    fn number(self) -> Option<f64> {
+    fn number(self) -> Result<f64> {
         match self {
-            Self::Number(x) => Some(x),
-            _ => None,
+            Self::Number(x) => Ok(x),
+            val => Err(Error::Value {
+                expected: "number".to_string(),
+                found: format!("{val}"),
+            }),
         }
     }
 }
@@ -88,8 +91,8 @@ impl fmt::Display for Value {
                 write!(f, ")")
             }
             Self::Symbol(x) => write!(f, "{}", x),
-            Self::Char(x) => write!(f, "{}", x),
-            Self::String(x) => write!(f, "{}", x),
+            Self::Char(x) => write!(f, "'{}'", x),
+            Self::String(x) => write!(f, "\"{}\"", x),
             Self::Closure { .. } => write!(f, "{{closure}}"),
             Self::Builtin(_) => write!(f, "{{closure}}"),
             Self::Nil => write!(f, "()"),

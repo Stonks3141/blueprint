@@ -17,7 +17,7 @@ pub fn eval(mut expr: Expr, mut env: Cow<'_, Env>) -> Result<Value> {
 
                 let (mut closure_env, args, val) = match procedure {
                     Value::Closure { env, args, val } => (env, args, val),
-                    Value::Builtin(builtin) => break builtin.eval(&arg_vals),
+                    Value::Builtin(builtin) => break builtin.eval(&arg_vals)?,
                     _ => {
                         return Err(Error::Value {
                             expected: "{closure}".to_string(),
@@ -138,7 +138,8 @@ pub fn eval(mut expr: Expr, mut env: Cow<'_, Env>) -> Result<Value> {
                 break eval(*val, env)?;
             }
             Expr::Set { ident, val } => {
-                *env.get(&ident).unwrap().borrow_mut() = eval(*val, Cow::Borrowed(&env))?;
+                *env.get(&ident).ok_or(Error::Unbound(ident))?.borrow_mut() =
+                    eval(*val, Cow::Borrowed(&env))?;
                 break Value::Nil;
             }
             Expr::Value(val) => break val,

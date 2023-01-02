@@ -7,8 +7,8 @@ const PRGM: &str = r#"
 ;  (sum-inner 1 0)))
 ;
 ;(display (sum 100000))
-(define (foo) '())
-(foo 42)
+
+(+ 42 "hi")
 "#;
 
 fn main() {
