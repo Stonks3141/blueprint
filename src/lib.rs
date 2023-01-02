@@ -1,6 +1,7 @@
 use builtin::Builtin;
 use fxhash::FxHashMap as HashMap;
 use std::{
+    borrow::Cow,
     cell::RefCell,
     fmt,
     rc::{Rc, Weak},
@@ -259,14 +260,13 @@ impl<'a> fmt::Display for Env<'a> {
     }
 }
 
-pub fn eval(mut expr: Expr, mut env: &Env) -> Value {
-    static mut ENV: Option<Env> = None;
+pub fn eval(mut expr: Expr, mut env: Cow<'_, Env>) -> Value {
     loop {
         match expr {
             Expr::Application { procedure, args } => {
-                let arg_vals = args.into_iter().map(|arg| eval(arg, env));
+                let arg_vals = args.into_iter().map(|arg| eval(arg, Cow::Borrowed(&env)));
 
-                let procedure = eval(*procedure, env);
+                let procedure = eval(*procedure, Cow::Borrowed(&env));
 
                 let (mut closure_env, args, val) = match procedure {
                     Value::Closure { env, args, val } => (env, args, val),
@@ -286,13 +286,10 @@ pub fn eval(mut expr: Expr, mut env: &Env) -> Value {
                         .zip(arg_vals.map(|x| MaybeWeak::new(RefCell::new(x)))),
                 );
 
-                unsafe {
-                    ENV = Some(Env {
-                        outer: None,
-                        this: closure_env,
-                    });
-                    env = ENV.as_ref().unwrap();
-                }
+                env = Cow::Owned(Env {
+                    outer: None,
+                    this: closure_env,
+                });
                 expr = *val;
                 continue;
             }
@@ -308,20 +305,20 @@ pub fn eval(mut expr: Expr, mut env: &Env) -> Value {
                     bindings
                         .into_iter()
                         .map(|(k, v)| {
-                            let v = eval(v, env);
+                            let v = eval(v, Cow::Borrowed(&env));
                             (k, MaybeWeak::new(RefCell::new(v)))
                         })
                         .collect(),
                 );
-                break eval(*val, &new_env);
+                break eval(*val, Cow::Borrowed(&new_env));
             }
             Expr::LetS { bindings, val } => {
                 let mut new_env = Env::from_outer(&env);
                 for (k, v) in bindings.into_iter() {
-                    let v = eval(v, &new_env);
+                    let v = eval(v, Cow::Borrowed(&new_env));
                     new_env.this.insert(k, MaybeWeak::new(RefCell::new(v)));
                 }
-                break eval(*val, &new_env);
+                break eval(*val, Cow::Borrowed(&new_env));
             }
             Expr::Letrec { bindings, val } => {
                 let new_env = Env {
@@ -336,11 +333,11 @@ pub fn eval(mut expr: Expr, mut env: &Env) -> Value {
 
                 bindings
                     .into_iter()
-                    .map(|(k, v)| (k, eval(v, &inner_env)))
+                    .map(|(k, v)| (k, eval(v, Cow::Borrowed(&inner_env))))
                     .collect::<Vec<_>>()
                     .into_iter() // ensure that evaluation always occurs before binding
                     .for_each(|(k, v)| *new_env.this[&k].get().borrow_mut() = v);
-                break eval(*val, &new_env);
+                break eval(*val, Cow::Borrowed(&new_env));
             }
             Expr::LetrecS { bindings, val } => {
                 let new_env = Env {
@@ -354,16 +351,19 @@ pub fn eval(mut expr: Expr, mut env: &Env) -> Value {
                 inner_env.this.values_mut().for_each(|v| *v = v.weak());
 
                 for (k, v) in bindings.into_iter() {
-                    let v = eval(v, &inner_env);
+                    let v = eval(v, Cow::Borrowed(&inner_env));
                     *new_env.this[&k].get().borrow_mut() = v;
                 }
-                break eval(*val, &new_env);
+                break eval(*val, Cow::Borrowed(&new_env));
+                // env = Cow::Owned(new_env);
+                // expr = *val;
+                // continue;
             }
             Expr::Define { .. } => {
                 panic!("`define`s should have been removed by the `unify` function")
             }
             Expr::If { predicate, t, f } => {
-                let predicate = eval(*predicate, env);
+                let predicate = eval(*predicate, Cow::Borrowed(&env));
                 if predicate == Value::TRUE {
                     expr = *t;
                 } else if predicate == Value::FALSE {
@@ -375,12 +375,12 @@ pub fn eval(mut expr: Expr, mut env: &Env) -> Value {
             }
             Expr::Begin { ops, val } => {
                 ops.into_iter().for_each(|op| {
-                    eval(op, env);
+                    eval(op, Cow::Borrowed(&env));
                 });
                 break eval(*val, env);
             }
             Expr::Set { ident, val } => {
-                *env.get(&ident).unwrap().borrow_mut() = eval(*val, env);
+                *env.get(&ident).unwrap().borrow_mut() = eval(*val, Cow::Borrowed(&env));
                 break Value::Nil;
             }
             Expr::Value(val) => break val,
@@ -404,6 +404,6 @@ pub fn exec(prgm: &str) {
     println!("Program output:\n");
 
     let time = Instant::now();
-    eval(ast, &Env::new());
+    eval(ast, Cow::Owned(Env::new()));
     println!("\nEvaluation time: {:?}", time.elapsed());
 }
