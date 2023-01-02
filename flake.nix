@@ -1,5 +1,5 @@
 {
-  description = "scheme interpreter";
+  description = "Blueprint";
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs";
     utils.url = "github:gytis-ivaskevicius/flake-utils-plus";
@@ -9,7 +9,7 @@
     outputsBuilder = channels:
       let pkgs = channels.nixpkgs; in {
         devShell = pkgs.mkShell {
-          name = "schemers";
+          name = "blueprint";
           packages = with pkgs; [
             cargo
             rustc
