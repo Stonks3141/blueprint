@@ -2,7 +2,7 @@ use super::{Builtin, Expr, Ident, Value};
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::{char, none_of, one_of, u8},
+    character::complete::{char, multispace0, none_of, one_of, u8},
     character::streaming,
     combinator::{cut, map, value},
     error::VerboseError,
@@ -23,7 +23,7 @@ where
 {
     preceded(
         discard0,
-        delimited(char('('), delimited(discard0, f, discard0), char(')')),
+        delimited(char('('), delimited(discard0, f, discard0), cut(char(')'))),
     )
 }
 
@@ -124,13 +124,12 @@ fn parse_pair(i: &str) -> IResult<&'_ str, Value, VerboseError<&'_ str>> {
 }
 
 fn parse_quoted(i: &str) -> IResult<&'_ str, Value, VerboseError<&'_ str>> {
-    delimited(
+    preceded(
         discard0,
         alt((
             preceded(char('\''), parse_value_full),
             sexp(preceded(tag("quote"), preceded(discard0, parse_value_full))),
         )),
-        discard0,
     )(i)
 }
 
@@ -180,6 +179,22 @@ fn parse_ident(i: &str) -> IResult<&'_ str, Ident, VerboseError<&'_ str>> {
     )(i)
 }
 
+fn parse_body(i: &str) -> IResult<&'_ str, Expr, VerboseError<&'_ str>> {
+    map(
+        pair(
+            many0(map(parse_define, |expr| match expr {
+                Expr::Define { name, val } => (name, *val),
+                _ => unreachable!(),
+            })),
+            parse_expr,
+        ),
+        |(bindings, val)| Expr::LetrecS {
+            bindings,
+            val: Box::new(val),
+        },
+    )(i)
+}
+
 fn parse_application(i: &str) -> IResult<&'_ str, Expr, VerboseError<&'_ str>> {
     sexp(map(
         pair(parse_expr, many0(parse_expr)),
@@ -194,7 +209,7 @@ fn parse_lambda(i: &str) -> IResult<&'_ str, Expr, VerboseError<&'_ str>> {
     sexp(map(
         preceded(
             tag("lambda"),
-            cut(pair(sexp(many0(parse_ident)), parse_expr)),
+            cut(pair(sexp(many0(parse_ident)), parse_body)),
         ),
         |(args, val)| Expr::Lambda {
             args,
@@ -209,7 +224,7 @@ fn parse_let(i: &str) -> IResult<&'_ str, Expr, VerboseError<&'_ str>> {
             tag("let"),
             cut(pair(
                 sexp(many1(sexp(pair(parse_ident, parse_expr)))),
-                parse_expr,
+                parse_body,
             )),
         ),
         |(bindings, val)| Expr::Let {
@@ -225,7 +240,7 @@ fn parse_lets(i: &str) -> IResult<&'_ str, Expr, VerboseError<&'_ str>> {
             tag("let*"),
             cut(pair(
                 sexp(many1(sexp(pair(parse_ident, parse_expr)))),
-                parse_expr,
+                parse_body,
             )),
         ),
         |(bindings, val)| Expr::LetS {
@@ -241,7 +256,7 @@ fn parse_letrec(i: &str) -> IResult<&'_ str, Expr, VerboseError<&'_ str>> {
             tag("letrec"),
             cut(pair(
                 sexp(many1(sexp(pair(parse_ident, parse_expr)))),
-                parse_expr,
+                parse_body,
             )),
         ),
         |(bindings, val)| Expr::Letrec {
@@ -257,7 +272,7 @@ fn parse_letrecs(i: &str) -> IResult<&'_ str, Expr, VerboseError<&'_ str>> {
             tag("letrec*"),
             cut(pair(
                 sexp(many1(sexp(pair(parse_ident, parse_expr)))),
-                parse_expr,
+                parse_body,
             )),
         ),
         |(bindings, val)| Expr::LetrecS {
@@ -276,7 +291,7 @@ fn parse_define(i: &str) -> IResult<&'_ str, Expr, VerboseError<&'_ str>> {
                 val: Box::new(val),
             }),
             map(
-                pair(sexp(pair(parse_ident, many0(parse_ident))), parse_expr),
+                pair(sexp(pair(parse_ident, many0(parse_ident))), parse_body),
                 |((name, args), val)| Expr::Define {
                     name,
                     val: Box::new(Expr::Lambda {
@@ -346,5 +361,5 @@ pub fn parse_expr(i: &str) -> IResult<&'_ str, Expr, VerboseError<&'_ str>> {
 }
 
 pub fn parse_prgm(i: &str) -> IResult<&'_ str, Vec<Expr>, VerboseError<&'_ str>> {
-    many0(parse_expr)(i)
+    cut(many0(parse_expr))(i)
 }

@@ -15,3 +15,7 @@ opt-level = 3
 codegen-units = 1
 lto = "thin"
 strip = true
+
+[[bin]]
+name = "blueprint"
+path = "src/main.rs"
