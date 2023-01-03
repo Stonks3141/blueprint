@@ -29,8 +29,8 @@ where
 
 fn parse_boolean(i: &str) -> IResult<&'_ str, Value, VerboseError<&'_ str>> {
     alt((
-        value(Value::TRUE, tag("#t")),
-        value(Value::FALSE, tag("#f")),
+        value(Value::TRUE, alt((tag("#t"), tag("#true")))),
+        value(Value::FALSE, alt((tag("#f"), tag("#false")))),
     ))(i)
 }
 
