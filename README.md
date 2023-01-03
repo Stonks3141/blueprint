@@ -46,6 +46,8 @@ $ blueprint ./main.scm
 - [x] Proper tail-call optimization
 - [x] Reference-counting garbage collection
 - [x] REPL
+- [ ] Descriptive syntax errors
+- [ ] Error locations
 - [ ] Proper number type with ints, rationals, and complex numbers
 - [ ] All R7RS-small basic expressions
 - [ ] All R7RS-small standard procedures
