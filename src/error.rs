@@ -4,11 +4,11 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("syntax error")]
+    #[error("invalid syntax")]
     Syntax,
-    #[error("unbound variable `{0}`")]
+    #[error("unbound variable: `{0}`")]
     Unbound(String),
-    #[error("expected `{expected}`, found `{found}`")]
+    #[error("unexpected value: expected `{expected}`, found `{found}`")]
     Value { expected: String, found: String },
     #[error("too many arguments: expected {expected}, got {got}")]
     TooManyArguments { expected: usize, got: usize },

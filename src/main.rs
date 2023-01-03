@@ -27,18 +27,23 @@ fn main() -> anyhow::Result<()> {
 
         let mut env = Env::new();
 
-        loop {
+        'main: loop {
             write!(stdout, "> ")?;
             stdout.flush()?;
             let mut line = String::new();
-            stdin.read_line(&mut line)?;
+            let expr = loop {
+                stdin.read_line(&mut line)?;
 
-            let expr = match parse_expr(&line) {
-                Ok((_, expr)) => expr,
-                Err(e) => {
-                    println!("{e}");
-                    continue;
-                }
+                break match parse_expr(&line) {
+                    Ok((_, expr)) => expr,
+                    Err(e) => match e {
+                        nom::Err::Incomplete(_) => continue,
+                        nom::Err::Error(_) | nom::Err::Failure(_) => {
+                            println!("error: invalid syntax");
+                            continue 'main;
+                        }
+                    },
+                };
             };
 
             if let Expr::Define { name, val } = expr {
@@ -51,7 +56,7 @@ fn main() -> anyhow::Result<()> {
                 let val = match eval(*val, Cow::Borrowed(&weak_env)) {
                     Ok(val) => val,
                     Err(e) => {
-                        println!("Error: {e}");
+                        println!("error: {e}");
                         continue;
                     }
                 };
@@ -63,7 +68,7 @@ fn main() -> anyhow::Result<()> {
             let val = match eval(expr, Cow::Borrowed(&env)) {
                 Ok(val) => val,
                 Err(e) => {
-                    println!("Error: {e}");
+                    println!("error: {e}");
                     continue;
                 }
             };

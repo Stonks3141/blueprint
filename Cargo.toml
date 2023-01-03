@@ -7,5 +7,11 @@ edition = "2021"
 fxhash = "0.2"
 nom = "7.1"
 thiserror = "1.0"
-clap = { version = "4.0", features = ["cargo"] }
 anyhow = "1.0"
+clap = { version = "4.0", features = ["cargo"] }
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = "thin"
+strip = true

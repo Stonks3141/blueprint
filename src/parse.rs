@@ -2,7 +2,8 @@ use super::{Builtin, Expr, Ident, Value};
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::{char, multispace0, none_of, one_of, u8},
+    character::complete::{char, none_of, one_of, u8},
+    character::streaming,
     combinator::{cut, map, value},
     error::VerboseError,
     multi::{many0, many1},
@@ -13,17 +14,16 @@ use nom::{
 
 fn discard0(i: &str) -> IResult<&'_ str, &'_ str, VerboseError<&'_ str>> {
     // many0(alt((multispace0, preceded(char(';'), not_line_ending))))(i)
-    multispace0(i)
+    streaming::multispace0(i) // must be streaming for multiline REPL input
 }
 
 fn sexp<'a, O, F>(f: F) -> impl FnMut(&'a str) -> IResult<&'a str, O, VerboseError<&'a str>>
 where
     F: Parser<&'a str, O, VerboseError<&'a str>>,
 {
-    delimited(
+    preceded(
         discard0,
-        delimited(char('('), delimited(discard0, f, discard0), cut(char(')'))),
-        discard0,
+        delimited(char('('), delimited(discard0, f, discard0), char(')')),
     )
 }
 
@@ -163,12 +163,11 @@ fn parse_builtin(i: &str) -> IResult<&'_ str, Builtin, VerboseError<&'_ str>> {
 
 fn parse_ident(i: &str) -> IResult<&'_ str, Ident, VerboseError<&'_ str>> {
     map(
-        delimited(
+        preceded(
             discard0,
             many1(one_of(
                 "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-.*/<=>!?:$%_&~^",
             )),
-            discard0,
         ),
         |x| x.into_iter().collect(),
     )(i)
@@ -188,7 +187,7 @@ fn parse_lambda(i: &str) -> IResult<&'_ str, Expr, VerboseError<&'_ str>> {
     sexp(map(
         preceded(
             tag("lambda"),
-            cut(pair(sexp(many1(parse_ident)), parse_expr)),
+            cut(pair(sexp(many0(parse_ident)), parse_expr)),
         ),
         |(args, val)| Expr::Lambda {
             args,
@@ -316,7 +315,7 @@ fn parse_set(i: &str) -> IResult<&'_ str, Expr, VerboseError<&'_ str>> {
 }
 
 pub fn parse_expr(i: &str) -> IResult<&'_ str, Expr, VerboseError<&'_ str>> {
-    delimited(
+    preceded(
         discard0,
         alt((
             parse_lambda,
@@ -336,7 +335,6 @@ pub fn parse_expr(i: &str) -> IResult<&'_ str, Expr, VerboseError<&'_ str>> {
             map(parse_ident, Expr::Ident),
             parse_application,
         )),
-        discard0,
     )(i)
 }
 
