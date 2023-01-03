@@ -50,3 +50,8 @@ $ blueprint ./main.scm
 - [ ] All R7RS-small basic expressions
 - [ ] All R7RS-small standard procedures
 - [ ] Macros
+
+## Development
+
+Clone the repository and install the [Rust toolchain](https://www.rust-lang.org/tools/install).
+Run `cargo run` in the root directory to build and run the program, or `cargo test` to run tests.
