@@ -18,21 +18,22 @@ impl Builtin {
         Ok(match self {
             Self::Add => Value::Number(
                 args.iter()
-                    .map(|val| val.clone().number())
+                    .map(|val| val.number())
                     .try_fold(0.0, |a, b| b.map(|b| a + b))?,
             ),
             Self::Sub => Value::Number(
                 args.iter()
-                    .map(|val| val.clone().number())
-                    .try_fold(0.0, |a, b| b.map(|b| a - b))?,
+                    .map(|val| val.number())
+                    .try_fold(0.0, |a, b| b.map(|b| a - b))?
+                    + 2.0 * args[0].number()?,
             ),
             Self::Mul => Value::Number(
                 args.iter()
-                    .map(|val| val.clone().number())
-                    .try_fold(0.0, |a, b| b.map(|b| a * b))?,
+                    .map(|val| val.number())
+                    .try_fold(1.0, |a, b| b.map(|b| a * b))?,
             ),
             Self::Div => {
-                let (lhs, rhs) = (args[0].clone().number()?, args[1].clone().number()?);
+                let (lhs, rhs) = (args[0].number()?, args[1].number()?);
                 Value::Number(lhs / rhs)
             }
             Self::Eq => Value::Boolean(args[0] == args[1]),
