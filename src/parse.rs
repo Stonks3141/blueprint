@@ -124,7 +124,14 @@ fn parse_pair(i: &str) -> IResult<&'_ str, Value, VerboseError<&'_ str>> {
 }
 
 fn parse_quoted(i: &str) -> IResult<&'_ str, Value, VerboseError<&'_ str>> {
-    delimited(discard0, preceded(char('\''), parse_value_full), discard0)(i)
+    delimited(
+        discard0,
+        alt((
+            preceded(char('\''), parse_value_full),
+            sexp(preceded(tag("quote"), preceded(discard0, parse_value_full))),
+        )),
+        discard0,
+    )(i)
 }
 
 fn parse_value(i: &str) -> IResult<&'_ str, Value, VerboseError<&'_ str>> {
