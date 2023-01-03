@@ -16,9 +16,11 @@ fn cmd() -> Command {
 
 fn main() -> anyhow::Result<()> {
     if let Some(path) = cmd().get_matches().get_one::<PathBuf>("path") {
+        blueprint_scm::REPL.set(false).unwrap();
         let prgm = fs::read_to_string(path)?;
         exec(&prgm)?;
     } else {
+        blueprint_scm::REPL.set(true).unwrap();
         println!("blueprint v{}", crate_version!());
         println!("Type (exit) to leave the REPL.");
 

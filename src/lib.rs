@@ -10,12 +10,15 @@ pub use eval::eval;
 use builtin::Builtin;
 use error::{Error, Result};
 use fxhash::FxHashMap as HashMap;
+use once_cell::sync::OnceCell;
 use std::{
     borrow::Cow,
     cell::RefCell,
     fmt,
     rc::{Rc, Weak},
 };
+
+pub static REPL: OnceCell<bool> = OnceCell::new();
 
 pub type Ident = String;
 

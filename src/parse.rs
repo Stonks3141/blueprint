@@ -14,7 +14,11 @@ use nom::{
 
 fn discard0(i: &str) -> IResult<&'_ str, &'_ str, VerboseError<&'_ str>> {
     // many0(alt((multispace0, preceded(char(';'), not_line_ending))))(i)
-    streaming::multispace0(i) // must be streaming for multiline REPL input
+    if *crate::REPL.get_or_init(|| false) {
+        streaming::multispace0(i) // must be streaming for multiline REPL input
+    } else {
+        multispace0(i)
+    }
 }
 
 fn sexp<'a, O, F>(f: F) -> impl FnMut(&'a str) -> IResult<&'a str, O, VerboseError<&'a str>>
