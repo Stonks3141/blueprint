@@ -1,5 +1,8 @@
 # blueprint
 
+[![CI](https://github.com/Stonks3141/blueprint/actions/workflows/ci.yml/badge.svg)](https://github.com/Stonks3141/blueprint/actions/workflows/ci.yml)
+[![license](https://img.shields.io/github/license/Stonks3141/blueprint)](https://www.mozilla.org/en-US/MPL/2.0/)
+
 A tiny Scheme interpreter written in Rust.
 
 Blueprint intends to be fully R7RS-small compliant. Concise, readable, and
