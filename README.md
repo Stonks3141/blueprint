@@ -47,16 +47,21 @@ $ blueprint ./main.scm
 - [x] Lexical scoping and closures
 - [x] Recursion
 - [x] Proper tail-call optimization
-- [x] Reference-counting garbage collection
+- [x] Reference-counted garbage collection
 - [x] REPL
 - [ ] Descriptive syntax errors
 - [ ] Error locations
 - [ ] Proper number type with ints, rationals, and complex numbers
-- [ ] All R7RS-small basic expressions
-- [ ] All R7RS-small standard procedures
+- [ ] Basic expressions
+- [ ] Standard procedures
+- [ ] Quasiquotation
+- [ ] Promises
+- [ ] Exceptions
+- [ ] Modules
 - [ ] Macros
 
-## Development
+## Contributing
 
 Clone the repository and install the [Rust toolchain](https://www.rust-lang.org/tools/install).
 Run `cargo run` in the root directory to build and run the program, or `cargo test` to run tests.
+Check out the above list of features that need implementing. Write tests for any new functionality.
