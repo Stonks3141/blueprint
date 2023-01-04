@@ -1,5 +1,4 @@
 use blueprint_scm::{eval, exec, parse::parse_expr, Env, Expr, MaybeWeak, Value};
-use clap::{arg, command, crate_version, value_parser, Command};
 use std::{
     borrow::Cow,
     cell::RefCell,
@@ -8,20 +7,24 @@ use std::{
     path::PathBuf,
 };
 
-fn cmd() -> Command {
-    command!()
-        .after_help("Run with no arguments to get a REPL.")
-        .arg(arg!(path: [PATH] "The Scheme file to interpret").value_parser(value_parser!(PathBuf)))
-}
-
 fn main() -> anyhow::Result<()> {
-    if let Some(path) = cmd().get_matches().get_one::<PathBuf>("path") {
+    let flags = xflags::parse_or_exit! {
+        optional -V,--version
+        optional path: PathBuf
+    };
+
+    if flags.version {
+        println!("blueprint v{}", env!("CARGO_PKG_VERSION"));
+        return Ok(());
+    }
+
+    if let Some(path) = flags.path {
         blueprint_scm::REPL.set(false).unwrap();
         let prgm = fs::read_to_string(path)?;
         exec(&prgm)?;
     } else {
         blueprint_scm::REPL.set(true).unwrap();
-        println!("blueprint v{}", crate_version!());
+        println!("blueprint v{}", env!("CARGO_PKG_VERSION"));
         println!("Type (exit) to leave the REPL.");
 
         let mut stdout = io::stdout();
