@@ -1,17 +1,24 @@
-use thiserror::Error;
+use quick_error::quick_error;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Error, Debug)]
-pub enum Error {
-    #[error("invalid syntax")]
-    Syntax,
-    #[error("unbound variable: `{0}`")]
-    Unbound(String),
-    #[error("unexpected value: expected `{expected}`, found `{found}`")]
-    Value { expected: String, found: String },
-    #[error("too many arguments: expected {expected}, got {got}")]
-    TooManyArguments { expected: usize, got: usize },
-    #[error("not enough arguments: expected {expected}, got {got}")]
-    NotEnoughArguments { expected: usize, got: usize },
+quick_error! {
+    #[derive(Debug)]
+    pub enum Error {
+        Syntax {
+            display("invalid syntax")
+        }
+        Unbound(name: String) {
+            display("unbound variable: `{name}`")
+        }
+        Value { expected: String, found: String } {
+            display("unexpected value: expected `{expected}`, found `{found}`")
+        }
+        TooManyArguments { expected: usize, got: usize } {
+            display("too many arguments: expected {expected}, got {got}")
+        }
+        NotEnoughArguments { expected: usize, got: usize } {
+            display("not enough arguments: expected {expected}, got {got}")
+        }
+    }
 }

@@ -14,7 +14,7 @@ fn main() -> anyhow::Result<()> {
     };
 
     if flags.version {
-        println!("blueprint v{}", env!("CARGO_PKG_VERSION"));
+        println!("{}", env!("CARGO_PKG_VERSION"));
         return Ok(());
     }
 
