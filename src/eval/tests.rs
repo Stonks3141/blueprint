@@ -1,5 +1,5 @@
 use super::*;
-use parse::parse_expr;
+use crate::parse::parse_expr;
 
 #[test]
 fn fib() -> anyhow::Result<()> {
@@ -51,5 +51,19 @@ fn nested_let() -> anyhow::Result<()> {
 "#;
     let expr = parse_expr(prgm)?.1;
     assert_eq!(eval(expr, Cow::Owned(Env::new()))?, Value::Number(5.0));
+    Ok(())
+}
+
+#[test]
+fn num_eq() -> anyhow::Result<()> {
+    let prgm = "(= 1 1)";
+    let expr = parse_expr(prgm)?.1;
+    assert_eq!(eval(expr, Cow::Owned(Env::new()))?, Value::TRUE);
+    let prgm = "(= 1 -1)";
+    let expr = parse_expr(prgm)?.1;
+    assert_eq!(eval(expr, Cow::Owned(Env::new()))?, Value::FALSE);
+    let prgm = "(= 1 'a)";
+    let expr = parse_expr(prgm)?.1;
+    assert!(eval(expr, Cow::Owned(Env::new())).is_err());
     Ok(())
 }

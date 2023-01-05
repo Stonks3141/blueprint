@@ -7,6 +7,8 @@ pub enum Builtin {
     Mul,
     Div,
     Eq,
+    Equal,
+    NumEq,
     Or,
     Display,
     Newline,
@@ -36,7 +38,17 @@ impl Builtin {
                 let (lhs, rhs) = (args[0].number()?, args[1].number()?);
                 Value::Number(lhs / rhs)
             }
-            Self::Eq => Value::Boolean(args[0] == args[1]),
+            Self::NumEq => Value::Boolean(args[0].number()? == args[1].number()?),
+            // TODO
+            Self::Eq => match (args[0].clone(), args[1].clone()) {
+                (Value::Nil, Value::Nil) => Value::TRUE,
+                (Value::Symbol(a), Value::Symbol(b)) => Value::Boolean(a == b),
+                (Value::Number(a), Value::Number(b)) => Value::Boolean(a == b),
+                (Value::Char(a), Value::Char(b)) => Value::Boolean(a == b),
+                (Value::Boolean(a), Value::Boolean(b)) => Value::Boolean(a == b),
+                _ => Value::FALSE,
+            },
+            Self::Equal => Value::Boolean(args[0] == args[1]),
             Self::Or => Value::Boolean(args[0] == Value::TRUE || args[1] == Value::TRUE),
             Self::Display => {
                 for val in args.iter() {

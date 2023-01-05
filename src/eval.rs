@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 use crate::{
     error::{Error, Result},
     Env, Expr, MaybeWeak, Value,

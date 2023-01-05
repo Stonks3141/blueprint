@@ -2,8 +2,6 @@ mod builtin;
 pub mod error;
 mod eval;
 pub mod parse;
-#[cfg(test)]
-mod tests;
 
 pub use eval::eval;
 
