@@ -114,19 +114,14 @@ pub fn eval(mut expr: Expr, mut env: Cow<'_, Env>) -> Result<Value> {
                 break eval(*val, Cow::Borrowed(&new_env))?;
             }
             Expr::Define { .. } => {
-                panic!("`define`s should have been removed by the `unify` function")
+                panic!("`define`s should have been removed by the `unify` function and the parser")
             }
             Expr::If { predicate, t, f } => {
                 let predicate = eval(*predicate, Cow::Borrowed(&env))?;
-                if predicate == Value::TRUE {
+                if predicate != Value::FALSE {
                     expr = *t;
-                } else if predicate == Value::FALSE {
-                    expr = *f;
                 } else {
-                    return Err(Error::Value {
-                        expected: "boolean".to_string(),
-                        found: format!("{}", predicate),
-                    });
+                    expr = *f;
                 }
                 continue;
             }
