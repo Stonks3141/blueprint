@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 use super::{Builtin, Expr, Ident, Value};
 use nom::{
     branch::alt,
@@ -360,10 +363,11 @@ pub fn parse_expr(i: &str) -> IResult<&'_ str, Expr, VerboseError<&'_ str>> {
             parse_begin,
             parse_set,
             map(parse_quoted, Expr::Value),
-            // order is important here, `parse_ident` could parse builtins or values as idents
-            // and `parse_application` could parse any of the above as applications
-            map(parse_builtin, Expr::Builtin),
+            // order is important here, `parse_ident` could parse builtins or values as idents,
+            // `parse_application` could parse any of the above as applications, and `parse_builtin`
+            // could parse a negative integer as subtraction.
             map(parse_value, Expr::Value),
+            map(parse_builtin, Expr::Builtin),
             map(parse_ident, Expr::Ident),
             parse_application,
         )),
