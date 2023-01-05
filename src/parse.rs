@@ -192,9 +192,15 @@ fn parse_body(i: &str) -> IResult<&'_ str, Expr, VerboseError<&'_ str>> {
             })),
             parse_expr,
         ),
-        |(bindings, val)| Expr::LetrecS {
-            bindings,
-            val: Box::new(val),
+        |(bindings, val)| {
+            if bindings.is_empty() {
+                val
+            } else {
+                Expr::LetrecS {
+                    bindings,
+                    val: Box::new(val),
+                }
+            }
         },
     )(i)
 }
