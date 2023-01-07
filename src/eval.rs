@@ -37,6 +37,7 @@ pub fn eval(mut expr: Expr, mut env: Cow<'_, Env>) -> Result<Value> {
                     Ordering::Equal => (),
                 }
 
+                closure_env.reserve(args.len());
                 closure_env.extend(
                     args.into_iter().zip(
                         arg_vals
@@ -142,8 +143,8 @@ pub fn eval(mut expr: Expr, mut env: Cow<'_, Env>) -> Result<Value> {
             Expr::Value(val) => break val,
             Expr::Ident(ident) => {
                 break (*env.get(&ident).ok_or(Error::Unbound(ident))?)
-                    .clone()
-                    .into_inner();
+                    .borrow()
+                    .clone();
             }
         }
     })
