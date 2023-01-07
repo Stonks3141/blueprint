@@ -1,8 +1,8 @@
 use super::*;
-use crate::{make_list, Expr, Value};
+use crate::{error::Result, make_list, Expr, Value};
 
 #[test]
-fn bool() -> anyhow::Result<()> {
+fn bool() -> Result<()> {
     let prgm = "#f";
     assert_eq!(parse_expr(prgm)?.1, Expr::Value(Value::Boolean(false)));
     let prgm = "#false";
@@ -15,14 +15,14 @@ fn bool() -> anyhow::Result<()> {
 }
 
 #[test]
-fn nil() -> anyhow::Result<()> {
+fn nil() -> Result<()> {
     let prgm = "'()";
     assert_eq!(parse_expr(prgm)?.1, Expr::Value(Value::Nil));
     Ok(())
 }
 
 #[test]
-fn char() -> anyhow::Result<()> {
+fn char() -> Result<()> {
     let prgm = r"#\alarm";
     assert_eq!(parse_expr(prgm)?.1, Expr::Value(Value::Char('\x07')));
     let prgm = r"#\backspace";
@@ -49,7 +49,7 @@ fn char() -> anyhow::Result<()> {
 }
 
 #[test]
-fn string() -> anyhow::Result<()> {
+fn string() -> Result<()> {
     let prgm = r#""hi""#;
     assert_eq!(
         parse_expr(prgm)?.1,
@@ -60,7 +60,7 @@ fn string() -> anyhow::Result<()> {
 
 #[ignore = "string escapes are not implemented"]
 #[test]
-fn string_escapes() -> anyhow::Result<()> {
+fn string_escapes() -> Result<()> {
     let prgm = r#""h\"i\r\n""#;
     assert_eq!(
         parse_expr(prgm)?.1,
@@ -70,7 +70,7 @@ fn string_escapes() -> anyhow::Result<()> {
 }
 
 #[test]
-fn number() -> anyhow::Result<()> {
+fn number() -> Result<()> {
     let prgm = "0";
     assert_eq!(
         parse_expr(prgm)?.1,
@@ -95,7 +95,7 @@ fn number() -> anyhow::Result<()> {
 }
 
 #[test]
-fn vector() -> anyhow::Result<()> {
+fn vector() -> Result<()> {
     let prgm = "'#(1 2 3)";
     assert_eq!(
         parse_expr(prgm)?.1,
@@ -119,7 +119,7 @@ fn vector() -> anyhow::Result<()> {
 }
 
 #[test]
-fn bytevector() -> anyhow::Result<()> {
+fn bytevector() -> Result<()> {
     let prgm = "'#u8(1 2 3)";
     assert_eq!(
         parse_expr(prgm)?.1,
@@ -131,7 +131,7 @@ fn bytevector() -> anyhow::Result<()> {
 }
 
 #[test]
-fn list() -> anyhow::Result<()> {
+fn list() -> Result<()> {
     let prgm = "'(1 2 3)";
     assert_eq!(
         parse_expr(prgm)?.1,
@@ -159,7 +159,7 @@ fn list() -> anyhow::Result<()> {
 }
 
 #[test]
-fn pair() -> anyhow::Result<()> {
+fn pair() -> Result<()> {
     let prgm = "'(1 . (2 . (3 . ())))";
     assert_eq!(
         parse_expr(prgm)?.1,

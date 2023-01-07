@@ -7,6 +7,7 @@ quick_error! {
     pub enum Error {
         Syntax {
             display("invalid syntax")
+            from(nom::Err<nom::error::VerboseError<&str>>) // TODO: more info
         }
         Unbound(name: String) {
             display("unbound variable: `{name}`")

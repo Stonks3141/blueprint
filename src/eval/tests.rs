@@ -1,8 +1,8 @@
 use super::*;
-use crate::{parse::parse_expr, Number};
+use crate::{error::Result, parse::parse_expr, Number};
 
 #[test]
-fn fib() -> anyhow::Result<()> {
+fn fib() -> Result<()> {
     let prgm = r#"
 (letrec ((fib (lambda (n)
   (if (or (= n 1) (= n 2))
@@ -20,7 +20,7 @@ fn fib() -> anyhow::Result<()> {
 
 // test for tail call optimization
 #[test]
-fn sum() -> anyhow::Result<()> {
+fn sum() -> Result<()> {
     let prgm = r#"
 (letrec ((sum (lambda (i acc max)
   (if (= i max)
@@ -37,7 +37,7 @@ fn sum() -> anyhow::Result<()> {
 }
 
 #[test]
-fn closure() -> anyhow::Result<()> {
+fn closure() -> Result<()> {
     let prgm = r#"
 (let* ((foo (lambda (n) (lambda (x) (+ n x))))
        (my-foo (foo 42)))
@@ -52,7 +52,7 @@ fn closure() -> anyhow::Result<()> {
 }
 
 #[test]
-fn nested_let() -> anyhow::Result<()> {
+fn nested_let() -> Result<()> {
     let prgm = r#"
 (let ((foo 4))
   (let ((bar (+ foo 1)))
@@ -67,7 +67,7 @@ fn nested_let() -> anyhow::Result<()> {
 }
 
 #[test]
-fn num_eq() -> anyhow::Result<()> {
+fn num_eq() -> Result<()> {
     let prgm = "(= 1 1)";
     let expr = parse_expr(prgm)?.1;
     assert_eq!(eval(expr, Cow::Owned(Env::new()))?, Value::TRUE);
