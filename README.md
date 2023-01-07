@@ -11,11 +11,17 @@ hope to get it no more than 2-3 times slower than cpython.
 
 ## Installation
 
-### Building from Source
+### With Cargo
 
 Install the [Rust toolchain](https://www.rust-lang.org/tools/install).
-Run `cargo install --git https://github.com/Stonks3141/blueprint` to build
-the program and copy it into your `$PATH`.
+Run `cargo install --git https://github.com/Stonks3141/blueprint blueprint` to
+download, build, and install the program.
+
+### Building from Source
+
+Install the [Rust toolchain](https://www.rust-lang.org/tools/install) and clone
+the repository. Run `cargo install --path .` in the base directory to build and
+install the program.
 
 ## Usage
 
@@ -51,13 +57,13 @@ $ blueprint ./main.scm
 - [x] REPL
 - [ ] Descriptive syntax errors
 - [ ] Error locations
-- [ ] Proper number type with ints, rationals, and complex numbers
-- [ ] Basic expressions
-- [ ] Standard procedures
+- [x] Proper number type with ints, rationals, and complex numbers
+- [ ] All basic expressions
+- [ ] All standard procedures
 - [ ] Quasiquotation
 - [ ] Promises
 - [ ] Exceptions
-- [ ] Modules
+- [ ] Libraries
 - [ ] Macros
 
 ## Contributing
