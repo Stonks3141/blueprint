@@ -1,4 +1,4 @@
-mod builtin;
+mod builtins;
 pub mod error;
 mod eval;
 mod number;
@@ -7,7 +7,6 @@ pub mod parse;
 pub use eval::eval;
 pub use number::Number;
 
-use builtin::Builtin;
 use error::{Error, Result};
 use fxhash::FxHashMap as HashMap;
 use once_cell::sync::OnceCell;
@@ -21,6 +20,7 @@ use std::{
 pub static REPL: OnceCell<bool> = OnceCell::new();
 
 pub type Ident = String;
+pub type Builtin = fn(Vec<Value>) -> Result<Value>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
@@ -157,7 +157,6 @@ pub enum Expr {
     },
     Value(Value),
     Ident(Ident),
-    Builtin(Builtin),
 }
 
 fn unify(exprs: impl Iterator<Item = Expr>) -> Expr {
@@ -221,10 +220,22 @@ impl<T> MaybeWeak<T> {
     }
 }
 
-#[derive(Debug, Default, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Env<'a> {
     pub outer: Option<&'a Env<'a>>,
     pub this: HashMap<Ident, MaybeWeak<RefCell<Value>>>,
+}
+
+impl<'a> Default for Env<'a> {
+    fn default() -> Self {
+        Self {
+            outer: None,
+            this: builtins::base()
+                .into_iter()
+                .map(|(k, v)| (k, MaybeWeak::new(RefCell::new(Value::Builtin(v)))))
+                .collect(),
+        }
+    }
 }
 
 impl<'a> Env<'a> {

@@ -60,7 +60,6 @@ impl fmt::Display for Number {
             Self::Real(n) => write!(f, "{}", n),
             Self::Rational(n) => write!(f, "{}", n),
             Self::Integer(n) => write!(f, "{}", n),
-            _ => Ok(()),
         }
     }
 }

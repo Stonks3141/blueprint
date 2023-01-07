@@ -20,7 +20,7 @@ pub fn eval(mut expr: Expr, mut env: Cow<'_, Env>) -> Result<Value> {
 
                 let (mut closure_env, args, val) = match procedure {
                     Value::Closure { env, args, val } => (env, args, val),
-                    Value::Builtin(builtin) => break builtin.eval(&arg_vals)?,
+                    Value::Builtin(builtin) => break builtin(arg_vals)?,
                     _ => {
                         return Err(Error::Value {
                             expected: "{closure}".to_string(),
@@ -145,7 +145,6 @@ pub fn eval(mut expr: Expr, mut env: Cow<'_, Env>) -> Result<Value> {
                     .clone()
                     .into_inner();
             }
-            Expr::Builtin(builtin) => break Value::Builtin(builtin),
         }
     })
 }

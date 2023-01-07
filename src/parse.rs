@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests;
 
-use crate::{Builtin, Expr, Ident, Number, Value};
+use crate::{Expr, Ident, Number, Value};
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -157,22 +157,6 @@ fn parse_value_full(i: &str) -> IResult<&'_ str, Value, VerboseError<&'_ str>> {
         parse_list,
         parse_nil,
         parse_quoted,
-    ))(i)
-}
-
-fn parse_builtin(i: &str) -> IResult<&'_ str, Builtin, VerboseError<&'_ str>> {
-    alt((
-        value(Builtin::Add, tag("+")),
-        value(Builtin::Sub, tag("-")),
-        value(Builtin::Mul, tag("*")),
-        value(Builtin::Div, tag("/")),
-        value(Builtin::Eq, tag("eq?")),
-        value(Builtin::Equal, tag("equal?")),
-        value(Builtin::NumEq, tag("=")),
-        value(Builtin::Or, tag("or")),
-        value(Builtin::Display, tag("display")),
-        value(Builtin::Newline, tag("newline")),
-        value(Builtin::Exit, tag("exit")),
     ))(i)
 }
 
@@ -365,11 +349,9 @@ pub fn parse_expr(i: &str) -> IResult<&'_ str, Expr, VerboseError<&'_ str>> {
             parse_begin,
             parse_set,
             map(parse_quoted, Expr::Value),
-            // order is important here, `parse_ident` could parse builtins or values as idents,
-            // `parse_application` could parse any of the above as applications, and `parse_builtin`
-            // could parse a negative integer as subtraction.
+            // order is important here, `parse_ident` could parse values as idents
+            // and `parse_application` could parse any of the above as applications
             map(parse_value, Expr::Value),
-            map(parse_builtin, Expr::Builtin),
             map(parse_ident, Expr::Ident),
             parse_application,
         )),
