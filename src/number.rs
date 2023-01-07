@@ -6,7 +6,7 @@ use std::ops::{
     Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
 };
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy)]
 pub enum Number {
     Complex(Complex<f64>),
     ExactComplex(Complex<Ratio<i64>>),
@@ -20,6 +20,54 @@ impl Number {
     pub const ONE: Self = Self::Integer(1);
     pub const MIN: Self = Self::Integer(i64::MIN);
     pub const MAX: Self = Self::Integer(i64::MAX);
+}
+
+impl PartialEq<Self> for Number {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Complex(n), Self::Complex(m)) => n == m,
+            (Self::ExactComplex(n), Self::Complex(m)) => {
+                Complex::new(to_real(n.re), to_real(n.im)) == *m
+            }
+            (Self::Real(n), Self::Complex(m)) => Complex::new(*n, 0.0) == *m,
+            (Self::Rational(n), Self::Complex(m)) => Complex::new(to_real(*n), 0.0) == *m,
+            (Self::Integer(n), Self::Complex(m)) => Complex::new(*n as f64, 0.0) == *m,
+            (Self::Complex(n), Self::ExactComplex(m)) => {
+                Complex::new(to_real(m.re), to_real(m.im)) == *n
+            }
+            (Self::ExactComplex(n), Self::ExactComplex(m)) => n == m,
+            (Self::Real(n), Self::ExactComplex(m)) => {
+                Complex::new(*n, 0.0) == Complex::new(to_real(m.re), to_real(m.im))
+            }
+            (Self::Rational(n), Self::ExactComplex(m)) => {
+                Complex::new(*n, Ratio::from_integer(0)) == *m
+            }
+            (Self::Integer(n), Self::ExactComplex(m)) => {
+                *m == Complex::new(Ratio::from_integer(*n), Ratio::from_integer(0))
+            }
+            (Self::Complex(n), Self::Real(m)) => *n == Complex::new(*m, 0.0),
+            (Self::ExactComplex(n), Self::Real(m)) => {
+                Complex::new(*m, 0.0) == Complex::new(to_real(n.re), to_real(n.im))
+            }
+            (Self::Real(n), Self::Real(m)) => n == m,
+            (Self::Rational(n), Self::Real(m)) => to_real(*n) == *m,
+            (Self::Integer(n), Self::Real(m)) => *n as f64 == *m,
+            (Self::Complex(n), Self::Rational(m)) => *n == Complex::new(to_real(*m), 0.0),
+            (Self::ExactComplex(n), Self::Rational(m)) => {
+                *n == Complex::new(*m, Ratio::from_integer(0))
+            }
+            (Self::Real(n), Self::Rational(m)) => *n == to_real(*m),
+            (Self::Rational(n), Self::Rational(m)) => n == m,
+            (Self::Integer(n), Self::Rational(m)) => Ratio::from_integer(*n) == *m,
+            (Self::Complex(n), Self::Integer(m)) => *n == Complex::new(*m as f64, 0.0),
+            (Self::ExactComplex(n), Self::Integer(m)) => {
+                *n == Complex::new(Ratio::from_integer(*m), Ratio::from_integer(0))
+            }
+            (Self::Real(n), Self::Integer(m)) => *n == *m as f64,
+            (Self::Rational(n), Self::Integer(m)) => *n == Ratio::from_integer(*m),
+            (Self::Integer(n), Self::Integer(m)) => n == m,
+        }
+    }
 }
 
 impl From<i64> for Number {
