@@ -72,13 +72,25 @@ fn string_escapes() -> anyhow::Result<()> {
 #[test]
 fn number() -> anyhow::Result<()> {
     let prgm = "0";
-    assert_eq!(parse_expr(prgm)?.1, Expr::Value(Value::Number(0.0)));
+    assert_eq!(
+        parse_expr(prgm)?.1,
+        Expr::Value(Value::Number(Number::from(0.0)))
+    );
     let prgm = "0.0";
-    assert_eq!(parse_expr(prgm)?.1, Expr::Value(Value::Number(0.0)));
+    assert_eq!(
+        parse_expr(prgm)?.1,
+        Expr::Value(Value::Number(Number::from(0.0)))
+    );
     let prgm = "-1";
-    assert_eq!(parse_expr(prgm)?.1, Expr::Value(Value::Number(-1.0)));
+    assert_eq!(
+        parse_expr(prgm)?.1,
+        Expr::Value(Value::Number(Number::from(-1.0)))
+    );
     let prgm = "1e-1";
-    assert_eq!(parse_expr(prgm)?.1, Expr::Value(Value::Number(0.1)));
+    assert_eq!(
+        parse_expr(prgm)?.1,
+        Expr::Value(Value::Number(Number::from(0.1)))
+    );
     Ok(())
 }
 
@@ -88,9 +100,9 @@ fn vector() -> anyhow::Result<()> {
     assert_eq!(
         parse_expr(prgm)?.1,
         Expr::Value(Value::Vector(vec![
-            Value::Number(1.0),
-            Value::Number(2.0),
-            Value::Number(3.0),
+            Value::Number(Number::from(1.0)),
+            Value::Number(Number::from(2.0)),
+            Value::Number(Number::from(3.0)),
         ])),
     );
     let prgm = "'#()";
@@ -124,7 +136,12 @@ fn list() -> anyhow::Result<()> {
     assert_eq!(
         parse_expr(prgm)?.1,
         Expr::Value(make_list(
-            vec![Value::Number(1.0), Value::Number(2.0), Value::Number(3.0),].into_iter()
+            vec![
+                Value::Number(Number::from(1.0)),
+                Value::Number(Number::from(2.0)),
+                Value::Number(Number::from(3.0)),
+            ]
+            .into_iter()
         )),
     );
     let prgm = "'(a (()))";
@@ -147,7 +164,12 @@ fn pair() -> anyhow::Result<()> {
     assert_eq!(
         parse_expr(prgm)?.1,
         Expr::Value(make_list(
-            vec![Value::Number(1.0), Value::Number(2.0), Value::Number(3.0),].into_iter()
+            vec![
+                Value::Number(Number::from(1.0)),
+                Value::Number(Number::from(2.0)),
+                Value::Number(Number::from(3.0)),
+            ]
+            .into_iter()
         )),
     );
     let prgm = "'(a . ((() . ()) . ()))";
