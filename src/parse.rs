@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests;
 
-use super::{Builtin, Expr, Ident, Value};
+use crate::{Builtin, Expr, Ident, Number, Value};
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -73,12 +73,12 @@ fn parse_string(i: &str) -> IResult<&'_ str, Value, VerboseError<&'_ str>> {
     })(i)
 }
 
-// TODO: hexadecimal/octal/binary numbers
+// TODO: hexadecimal/octal/binary/imaginary/rational numbers
 fn parse_number(i: &str) -> IResult<&'_ str, Value, VerboseError<&'_ str>> {
     alt((
         // map(preceded(tag("0x"), hex_u32), |x| Value::Number(x as f64)),
         // map(preceded(tag("-0x"), hex_u32), |x| Value::Number(-x as f64)),
-        map(double, Value::Number),
+        map(double, |n| Value::Number(Number::Real(n))),
     ))(i)
 }
 

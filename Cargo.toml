@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 fxhash = "0.2"
 nom = "7.1"
+num = "0.4"
 quick-error = "2.0"
 anyhow = "1.0"
 xflags = "0.3"

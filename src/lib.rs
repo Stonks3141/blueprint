@@ -1,9 +1,11 @@
 mod builtin;
 pub mod error;
 mod eval;
+mod number;
 pub mod parse;
 
 pub use eval::eval;
+pub use number::Number;
 
 use builtin::Builtin;
 use error::{Error, Result};
@@ -22,7 +24,7 @@ pub type Ident = String;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
-    Number(f64),
+    Number(Number),
     Boolean(bool),
     Pair(Box<Value>, Box<Value>),
     Vector(Vec<Value>),
@@ -43,7 +45,7 @@ impl Value {
     const FALSE: Self = Self::Boolean(false);
     const TRUE: Self = Self::Boolean(true);
 
-    fn number(&self) -> Result<f64> {
+    fn number(&self) -> Result<Number> {
         match self {
             Self::Number(x) => Ok(*x),
             val => Err(Error::Value {

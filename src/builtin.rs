@@ -1,4 +1,4 @@
-use crate::{error::Result, Value};
+use crate::{error::Result, Number, Value};
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Builtin {
@@ -21,18 +21,18 @@ impl Builtin {
             Self::Add => Value::Number(
                 args.iter()
                     .map(|val| val.number())
-                    .try_fold(0.0, |a, b| b.map(|b| a + b))?,
+                    .try_fold(Number::ZERO, |a, b| b.map(|b| a + b))?,
             ),
             Self::Sub => Value::Number(
                 args.iter()
                     .map(|val| val.number())
-                    .try_fold(0.0, |a, b| b.map(|b| a - b))?
-                    + 2.0 * args[0].number()?,
+                    .try_fold(Number::ZERO, |a, b| b.map(|b| a - b))?
+                    + Number::from(2) * args[0].number()?,
             ),
             Self::Mul => Value::Number(
                 args.iter()
                     .map(|val| val.number())
-                    .try_fold(1.0, |a, b| b.map(|b| a * b))?,
+                    .try_fold(Number::ONE, |a, b| b.map(|b| a * b))?,
             ),
             Self::Div => {
                 let (lhs, rhs) = (args[0].number()?, args[1].number()?);
