@@ -117,8 +117,12 @@ fn to_real(n: Ratio<i64>) -> f64 {
 }
 
 macro_rules! impl_op {
-    ($self:ident, $rhs:ident, $op:tt) => {
-        match ($self, $rhs) {
+    ($op_trait:ident, $op_fn:ident, $op_assign:ident, $op_assign_fn:ident, $op:tt) => {
+
+impl $op_trait for Number {
+    type Output = Self;
+    fn $op_fn(self, rhs: Self) -> Self {
+        match (self, rhs) {
             (Self::Complex(n), Self::Complex(m)) => Self::Complex(n $op m),
             (Self::ExactComplex(n), Self::Complex(m)) => {
                 Self::Complex(Complex::new(to_real(n.re), to_real(n.im)) $op m)
@@ -162,70 +166,20 @@ macro_rules! impl_op {
     }
 }
 
-impl Add for Number {
-    type Output = Self;
-    fn add(self, rhs: Self) -> Self {
-        impl_op!(self, rhs, +)
+impl $op_assign for Number {
+    fn $op_assign_fn(&mut self, rhs: Self) {
+        *self = *self $op rhs;
     }
 }
 
-impl AddAssign for Number {
-    fn add_assign(&mut self, rhs: Self) {
-        *self = *self + rhs;
     }
 }
 
-impl Sub for Number {
-    type Output = Self;
-    fn sub(self, rhs: Self) -> Self {
-        impl_op!(self, rhs, -)
-    }
-}
-
-impl SubAssign for Number {
-    fn sub_assign(&mut self, rhs: Self) {
-        *self = *self - rhs;
-    }
-}
-
-impl Mul for Number {
-    type Output = Self;
-    fn mul(self, rhs: Self) -> Self {
-        impl_op!(self, rhs, *)
-    }
-}
-
-impl MulAssign for Number {
-    fn mul_assign(&mut self, rhs: Self) {
-        *self = *self * rhs;
-    }
-}
-
-impl Div for Number {
-    type Output = Self;
-    fn div(self, rhs: Self) -> Self {
-        impl_op!(self, rhs, /)
-    }
-}
-
-impl DivAssign for Number {
-    fn div_assign(&mut self, rhs: Self) {
-        *self = *self / rhs;
-    }
-}
-
-impl Rem for Number {
-    type Output = Self;
-    fn rem(self, rhs: Self) -> Self {
-        impl_op!(self, rhs, %)
-    }
-}
-
-impl RemAssign for Number {
-    fn rem_assign(&mut self, rhs: Self) {
-        *self = *self % rhs;
-    }
-}
+impl_op!(Add, add, AddAssign, add_assign, +);
+impl_op!(Sub, sub, SubAssign, sub_assign, -);
+impl_op!(Mul, mul, MulAssign, mul_assign, *);
+impl_op!(Div, div, DivAssign, div_assign, /);
+impl_op!(Rem, rem, RemAssign, rem_assign, %);
 
 impl Neg for Number {
     type Output = Self;
