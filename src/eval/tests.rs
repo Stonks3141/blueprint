@@ -1,6 +1,11 @@
 use super::*;
 use crate::{error::Result, parse::parse_expr, Number};
 
+fn run(prgm: &str) -> Result<Value> {
+    let expr = parse_expr(prgm)?.1;
+    eval(expr, Cow::Owned(Env::new()))
+}
+
 #[test]
 fn fib() -> Result<()> {
     let prgm = r#"
@@ -10,11 +15,7 @@ fn fib() -> Result<()> {
     (+ (fib (- n 1)) (fib (- n 2)))))))
   (fib 10))
 "#;
-    let expr = parse_expr(prgm)?.1;
-    assert_eq!(
-        eval(expr, Cow::Owned(Env::new()))?,
-        Value::Number(Number::from(55))
-    );
+    assert_eq!(run(prgm)?, Value::Number(Number::from(55)));
     Ok(())
 }
 
@@ -28,11 +29,7 @@ fn sum() -> Result<()> {
     (sum (+ i 1) (+ acc i) max)))))
   (sum 1 0 1000))
 "#;
-    let expr = parse_expr(prgm)?.1;
-    assert_eq!(
-        eval(expr, Cow::Owned(Env::new()))?,
-        Value::Number(Number::from(500500))
-    );
+    assert_eq!(run(prgm)?, Value::Number(Number::from(500500)));
     Ok(())
 }
 
@@ -43,11 +40,7 @@ fn closure() -> Result<()> {
        (my-foo (foo 42)))
          (my-foo 5)))
 "#;
-    let expr = parse_expr(prgm)?.1;
-    assert_eq!(
-        eval(expr, Cow::Owned(Env::new()))?,
-        Value::Number(Number::from(47))
-    );
+    assert_eq!(run(prgm)?, Value::Number(Number::from(47)));
     Ok(())
 }
 
@@ -58,24 +51,51 @@ fn nested_let() -> Result<()> {
   (let ((bar (+ foo 1)))
     bar))
 "#;
-    let expr = parse_expr(prgm)?.1;
-    assert_eq!(
-        eval(expr, Cow::Owned(Env::new()))?,
-        Value::Number(Number::from(5))
-    );
+    assert_eq!(run(prgm)?, Value::Number(Number::from(5)));
     Ok(())
 }
 
 #[test]
 fn num_eq() -> Result<()> {
     let prgm = "(= 1 1)";
-    let expr = parse_expr(prgm)?.1;
-    assert_eq!(eval(expr, Cow::Owned(Env::new()))?, Value::TRUE);
+    assert_eq!(run(prgm)?, Value::TRUE);
     let prgm = "(= 1 -1)";
-    let expr = parse_expr(prgm)?.1;
-    assert_eq!(eval(expr, Cow::Owned(Env::new()))?, Value::FALSE);
+    assert_eq!(run(prgm)?, Value::FALSE);
     let prgm = "(= 1 'a)";
-    let expr = parse_expr(prgm)?.1;
-    assert!(eval(expr, Cow::Owned(Env::new())).is_err());
+    assert!(run(prgm).is_err());
+    Ok(())
+}
+
+#[test]
+fn or() -> Result<()> {
+    let prgm = "(or)";
+    assert_eq!(run(prgm)?, Value::FALSE);
+    let prgm = "(or #t)";
+    assert_eq!(run(prgm)?, Value::TRUE);
+    let prgm = "(or '())";
+    assert_eq!(run(prgm)?, Value::Nil);
+    let prgm = "(or #f)";
+    assert_eq!(run(prgm)?, Value::FALSE);
+    let prgm = "(or #f #t)";
+    assert_eq!(run(prgm)?, Value::TRUE);
+    let prgm = "(or #f 'a)";
+    assert_eq!(run(prgm)?, Value::Symbol("a".to_string()));
+    let prgm = "(or 'a #f 'b)";
+    assert_eq!(run(prgm)?, Value::Symbol("a".to_string()));
+    Ok(())
+}
+
+#[test]
+fn and() -> Result<()> {
+    let prgm = "(and)";
+    assert_eq!(run(prgm)?, Value::TRUE);
+    let prgm = "(and #f)";
+    assert_eq!(run(prgm)?, Value::FALSE);
+    let prgm = "(and #t)";
+    assert_eq!(run(prgm)?, Value::TRUE);
+    let prgm = "(and #f)";
+    assert_eq!(run(prgm)?, Value::FALSE);
+    let prgm = "(and #t 'a)";
+    assert_eq!(run(prgm)?, Value::Symbol("a".to_string()));
     Ok(())
 }
