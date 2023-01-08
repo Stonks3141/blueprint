@@ -15,25 +15,45 @@ macro_rules! make_env {
 
 make_env! {
     pub base {
-        "+" => |args| Ok(Value::Number(
-             args.iter()
-                 .map(|val| val.number())
-                 .try_fold(Number::ZERO, |a, b| b.map(|b| a + b))?,
-         )),
-        "-" => |args| Ok(Value::Number(
-            args.iter()
+        "+" => |mut args| match args.len() {
+            0 => Err(Error::NotEnoughArguments { expected: 1, got: 0 }),
+            1 => Ok(Value::Number(args.pop().unwrap().number()?)),
+            2.. => Ok(Value::Number(args.iter()
                 .map(|val| val.number())
-                .try_fold(Number::ZERO, |a, b| b.map(|b| a - b))?
-                + Number::from(2) * args[0].number()?,
-        )),
-        "*" => |args| Ok(Value::Number(
-            args.iter()
+                .reduce(|a, b| Ok(a? + b?))
+                .unwrap()?
+            )),
+            _ => unreachable!(),
+        },
+        "-" => |mut args| match args.len() {
+            0 => Err(Error::NotEnoughArguments { expected: 1, got: 0 }),
+            1 => Ok(Value::Number(-args.pop().unwrap().number()?)),
+            2.. => Ok(Value::Number(args.iter()
                 .map(|val| val.number())
-                .try_fold(Number::ONE, |a, b| b.map(|b| a * b))?,
-        )),
-        "/" => |args| {
-            let (lhs, rhs) = (args[0].number()?, args[1].number()?);
-            Ok(Value::Number(lhs / rhs))
+                .reduce(|a, b| Ok(a? - b?))
+                .unwrap()?
+            )),
+            _ => unreachable!(),
+        },
+        "*" => |args| match args.len() {
+            0 => Err(Error::NotEnoughArguments { expected: 2, got: 0 }),
+            1 => Err(Error::NotEnoughArguments { expected: 2, got: 1 }),
+            2.. => Ok(Value::Number(args.iter()
+                .map(|val| val.number())
+                .reduce(|a, b| Ok(a? * b?))
+                .unwrap()?
+            )),
+            _ => unreachable!(),
+        },
+        "/" => |args| match args.len() {
+            0 => Err(Error::NotEnoughArguments { expected: 2, got: 0 }),
+            1 => Err(Error::NotEnoughArguments { expected: 2, got: 1 }),
+            2.. => Ok(Value::Number(args.iter()
+                .map(|val| val.number())
+                .reduce(|a, b| Ok(a? / b?))
+                .unwrap()?
+            )),
+            _ => unreachable!(),
         },
         "=" => |args| Ok(Value::Boolean(args[0].number()? == args[1].number()?)),
         // TODO
