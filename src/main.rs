@@ -1,4 +1,4 @@
-use blueprint_scheme::{eval, exec, parse::parse_expr, Env, Expr, MaybeWeak, Value};
+use blueprint_scheme::{eval, exec, parse::parse_expr, Env, Expr, MaybeWeak, Value, REPL};
 use quick_error::quick_error;
 use std::{
     borrow::Cow,
@@ -12,21 +12,23 @@ quick_error! {
     #[derive(Debug)]
     enum Error {
         Io(err: std::io::Error) {
-            from()
-            source(err)
             display("{err}")
+            source(err)
+            from()
         }
         Interpreter(err: blueprint_scheme::error::Error) {
-            from()
-            source(err)
             display("{err}")
+            source(err)
+            from()
         }
     }
 }
 
 fn main() -> Result<(), Error> {
     let flags = xflags::parse_or_exit! {
+        /// Print the version and exit.
         optional -V,--version
+        /// Path to the Scheme file to execute
         optional path: PathBuf
     };
 
@@ -36,11 +38,11 @@ fn main() -> Result<(), Error> {
     }
 
     if let Some(path) = flags.path {
-        blueprint_scheme::REPL.set(false).unwrap();
+        REPL.set(false).unwrap();
         let prgm = fs::read_to_string(path)?;
         exec(&prgm)?;
     } else {
-        blueprint_scheme::REPL.set(true).unwrap();
+        REPL.set(true).unwrap();
         println!("blueprint v{}", env!("CARGO_PKG_VERSION"));
         println!("Type (exit) to leave the REPL.");
 
