@@ -1,4 +1,4 @@
-use crate::{error::Error, Builtin, Ident, Number, Value};
+use crate::{error::Error, Builtin, Ident, Value};
 use fxhash::FxHashMap as HashMap;
 
 macro_rules! make_env {
@@ -19,7 +19,7 @@ make_env! {
             0 => Err(Error::NotEnoughArguments { expected: 1, got: 0 }),
             1 => Ok(Value::Number(args.pop().unwrap().number()?)),
             2.. => Ok(Value::Number(args.iter()
-                .map(|val| val.number())
+                .map(Value::number)
                 .reduce(|a, b| Ok(a? + b?))
                 .unwrap()?
             )),
@@ -29,7 +29,7 @@ make_env! {
             0 => Err(Error::NotEnoughArguments { expected: 1, got: 0 }),
             1 => Ok(Value::Number(-args.pop().unwrap().number()?)),
             2.. => Ok(Value::Number(args.iter()
-                .map(|val| val.number())
+                .map(Value::number)
                 .reduce(|a, b| Ok(a? - b?))
                 .unwrap()?
             )),
@@ -39,7 +39,7 @@ make_env! {
             0 => Err(Error::NotEnoughArguments { expected: 2, got: 0 }),
             1 => Err(Error::NotEnoughArguments { expected: 2, got: 1 }),
             2.. => Ok(Value::Number(args.iter()
-                .map(|val| val.number())
+                .map(Value::number)
                 .reduce(|a, b| Ok(a? * b?))
                 .unwrap()?
             )),
@@ -49,7 +49,7 @@ make_env! {
             0 => Err(Error::NotEnoughArguments { expected: 2, got: 0 }),
             1 => Err(Error::NotEnoughArguments { expected: 2, got: 1 }),
             2.. => Ok(Value::Number(args.iter()
-                .map(|val| val.number())
+                .map(Value::number)
                 .reduce(|a, b| Ok(a? / b?))
                 .unwrap()?
             )),
@@ -69,7 +69,7 @@ make_env! {
         // TODO
         "or" => |args| Ok(Value::Boolean(args[0] == Value::TRUE || args[1] == Value::TRUE)),
         "display" => |args| {
-            for val in args.iter() {
+            for val in args {
                 print!("{}", val);
             }
             Ok(Value::Nil)

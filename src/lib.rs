@@ -279,7 +279,7 @@ impl<'a> Env<'a> {
 
 impl<'a> fmt::Display for Env<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for (k, v) in self.this.iter() {
+        for (k, v) in &self.this {
             write!(f, "{}: {}\n\n", k, v.get().borrow())?;
         }
         self.outer
