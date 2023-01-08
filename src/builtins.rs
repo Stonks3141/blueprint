@@ -18,42 +18,38 @@ make_env! {
         "+" => |mut args| match args.len() {
             0 => Err(Error::NotEnoughArguments { expected: 1, got: 0 }),
             1 => Ok(Value::Number(args.pop().unwrap().number()?)),
-            2.. => Ok(Value::Number(args.iter()
+            _ => Ok(Value::Number(args.iter()
                 .map(Value::number)
                 .reduce(|a, b| Ok(a? + b?))
                 .unwrap()?
             )),
-            _ => unreachable!(),
         },
         "-" => |mut args| match args.len() {
             0 => Err(Error::NotEnoughArguments { expected: 1, got: 0 }),
             1 => Ok(Value::Number(-args.pop().unwrap().number()?)),
-            2.. => Ok(Value::Number(args.iter()
+            _ => Ok(Value::Number(args.iter()
                 .map(Value::number)
                 .reduce(|a, b| Ok(a? - b?))
                 .unwrap()?
             )),
-            _ => unreachable!(),
         },
         "*" => |args| match args.len() {
             0 => Err(Error::NotEnoughArguments { expected: 2, got: 0 }),
             1 => Err(Error::NotEnoughArguments { expected: 2, got: 1 }),
-            2.. => Ok(Value::Number(args.iter()
+            _ => Ok(Value::Number(args.iter()
                 .map(Value::number)
                 .reduce(|a, b| Ok(a? * b?))
                 .unwrap()?
             )),
-            _ => unreachable!(),
         },
         "/" => |args| match args.len() {
             0 => Err(Error::NotEnoughArguments { expected: 2, got: 0 }),
             1 => Err(Error::NotEnoughArguments { expected: 2, got: 1 }),
-            2.. => Ok(Value::Number(args.iter()
+            _ => Ok(Value::Number(args.iter()
                 .map(Value::number)
                 .reduce(|a, b| Ok(a? / b?))
                 .unwrap()?
             )),
-            _ => unreachable!(),
         },
         "=" => |args| Ok(Value::Boolean(args[0].number()? == args[1].number()?)),
         // TODO
@@ -66,8 +62,18 @@ make_env! {
             _ => Value::FALSE,
         }),
         "equal?" => |args| Ok(Value::Boolean(args[0] == args[1])),
-        // TODO
-        "or" => |args| Ok(Value::Boolean(args[0] == Value::TRUE || args[1] == Value::TRUE)),
+        "or" => |args| Ok(args.into_iter()
+            .find(|x| *x != Value::FALSE)
+            .unwrap_or(Value::FALSE)
+        ),
+        "and" => |mut args| match args.len() {
+            0 => Ok(Value::TRUE),
+            _ => Ok(args.iter()
+                .find(|x| **x == Value::FALSE)
+                .cloned()
+                .unwrap_or(args.pop().unwrap())
+            ),
+        },
         "display" => |args| {
             for val in args {
                 print!("{}", val);
