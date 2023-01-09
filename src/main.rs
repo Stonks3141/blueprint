@@ -1,3 +1,7 @@
+#[cfg(not(target_env = "msvc"))]
+#[global_allocator]
+static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
+
 use blueprint_scheme::{eval, exec, parse::parse_expr, Env, Expr, MaybeWeak, Value, REPL};
 use quick_error::quick_error;
 use std::{
