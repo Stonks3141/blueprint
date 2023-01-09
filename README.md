@@ -5,9 +5,9 @@
 
 A tiny Scheme interpreter written in Rust.
 
-Blueprint intends to be fully R7RS-small compliant. Concise, readable, and
-idiomatic code is more important for this project than performance, but I
-hope to get it no more than 2-3 times slower than cpython.
+Blueprint intends to be mostly R7RS-small compliant and implement a few SRFIs. It
+is and always will be a single-threaded interpreter, but hopefully I will find the
+time to make proper GC and a stack-based bytecode VM.
 
 ## Installation
 
