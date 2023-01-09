@@ -8,8 +8,8 @@ pub use eval::eval;
 pub use number::Number;
 
 use error::{Error, Result};
-use fxhash::FxHashMap as HashMap;
 use once_cell::sync::OnceCell;
+use rustc_hash::FxHashMap as HashMap;
 use std::{
     borrow::Cow,
     cell::RefCell,

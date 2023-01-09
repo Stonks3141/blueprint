@@ -4,7 +4,7 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-fxhash = "0.2"
+rustc-hash = "1.1"
 nom = "7.1"
 num = { version = "0.4", default-features = false, features = ["std"] }
 quick-error = "2.0"

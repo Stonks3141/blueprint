@@ -1,5 +1,5 @@
 use crate::{error::Error, Builtin, Ident, Value};
-use fxhash::FxHashMap as HashMap;
+use rustc_hash::FxHashMap as HashMap;
 
 macro_rules! make_env {
     ($( $vis:vis $env:ident { $($name:literal => $proc:expr),* $(,)? } )*) => {
