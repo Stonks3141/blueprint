@@ -26,6 +26,7 @@
               cargo-bloat
               cargo-flamegraph
               hyperfine
+              valgrind
               nixpkgs-fmt
               nil
             ];
