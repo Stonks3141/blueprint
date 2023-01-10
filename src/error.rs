@@ -9,7 +9,7 @@ quick_error! {
             display("invalid syntax")
             from(nom::Err<nom::error::VerboseError<&str>>) // TODO: more info
         }
-        Unbound(name: String) {
+        Unbound(name: crate::Ident) {
             display("unbound variable: `{name}`")
         }
         Value { expected: String, found: String } {

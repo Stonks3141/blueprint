@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 rustc-hash = "1.1"
+smartstring = "1.0"
 nom = "7.1"
 num = { version = "0.4", default-features = false, features = ["std"] }
 quick-error = "2.0"

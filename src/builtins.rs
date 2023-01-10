@@ -6,7 +6,7 @@ macro_rules! make_env {
         $(
             $vis fn $env() -> HashMap<Ident, Builtin> {
                 [
-                    $( ($name.to_string(), $proc as Builtin), )*
+                    $( ($name.into(), $proc as Builtin), )*
                 ].into_iter().collect()
             }
         )*

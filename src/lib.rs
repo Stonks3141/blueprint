@@ -10,6 +10,7 @@ pub use number::Number;
 use error::{Error, Result};
 use once_cell::sync::OnceCell;
 use rustc_hash::FxHashMap as HashMap;
+use smartstring::{LazyCompact, SmartString};
 use std::{
     borrow::Cow,
     cell::RefCell,
@@ -19,7 +20,7 @@ use std::{
 
 pub static REPL: OnceCell<bool> = OnceCell::new();
 
-pub type Ident = String;
+pub type Ident = SmartString<LazyCompact>;
 pub type Builtin = fn(Vec<Value>) -> Result<Value>;
 
 #[derive(Debug, Clone, PartialEq)]
