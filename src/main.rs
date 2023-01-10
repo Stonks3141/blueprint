@@ -28,7 +28,13 @@ quick_error! {
     }
 }
 
-fn main() -> Result<(), Error> {
+fn main() {
+    if let Err(e) = try_main() {
+        println!("{e}");
+    }
+}
+
+fn try_main() -> Result<(), Error> {
     let flags = xflags::parse_or_exit! {
         /// Print the version and exit.
         optional -V,--version

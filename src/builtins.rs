@@ -71,7 +71,7 @@ make_env! {
             _ => Ok(args.iter()
                 .find(|x| **x == Value::FALSE)
                 .cloned()
-                .unwrap_or(args.pop().unwrap())
+                .unwrap_or_else(|| args.pop().unwrap())
             ),
         },
         "display" => |args| {
