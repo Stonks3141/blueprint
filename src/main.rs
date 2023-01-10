@@ -10,6 +10,7 @@ use std::{
     fs,
     io::{self, Write},
     path::PathBuf,
+    process::ExitCode,
 };
 
 quick_error! {
@@ -28,9 +29,13 @@ quick_error! {
     }
 }
 
-fn main() {
-    if let Err(e) = try_main() {
-        println!("{e}");
+fn main() -> ExitCode {
+    match try_main() {
+        Ok(_) => ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("{e}");
+            ExitCode::FAILURE
+        }
     }
 }
 
