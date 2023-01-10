@@ -111,7 +111,7 @@ fn vector() -> Result<()> {
     assert_eq!(
         parse_expr(prgm)?.1,
         Expr::Value(Value::Vector(vec![
-            Value::Symbol("a".to_string()),
+            Value::Symbol("a".into()),
             Value::Vector(vec![Value::Nil]),
         ])),
     );
@@ -149,7 +149,7 @@ fn list() -> Result<()> {
         parse_expr(prgm)?.1,
         Expr::Value(make_list(
             vec![
-                Value::Symbol("a".to_string()),
+                Value::Symbol("a".into()),
                 make_list(vec![Value::Nil].into_iter()),
             ]
             .into_iter()
@@ -177,7 +177,7 @@ fn pair() -> Result<()> {
         parse_expr(prgm)?.1,
         Expr::Value(make_list(
             vec![
-                Value::Symbol("a".to_string()),
+                Value::Symbol("a".into()),
                 make_list(vec![Value::Nil].into_iter()),
             ]
             .into_iter()

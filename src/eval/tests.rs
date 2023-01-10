@@ -79,9 +79,9 @@ fn or() -> Result<()> {
     let prgm = "(or #f #t)";
     assert_eq!(run(prgm)?, Value::TRUE);
     let prgm = "(or #f 'a)";
-    assert_eq!(run(prgm)?, Value::Symbol("a".to_string()));
+    assert_eq!(run(prgm)?, Value::Symbol("a".into()));
     let prgm = "(or 'a #f 'b)";
-    assert_eq!(run(prgm)?, Value::Symbol("a".to_string()));
+    assert_eq!(run(prgm)?, Value::Symbol("a".into()));
     Ok(())
 }
 
@@ -96,6 +96,6 @@ fn and() -> Result<()> {
     let prgm = "(and #f)";
     assert_eq!(run(prgm)?, Value::FALSE);
     let prgm = "(and #t 'a)";
-    assert_eq!(run(prgm)?, Value::Symbol("a".to_string()));
+    assert_eq!(run(prgm)?, Value::Symbol("a".into()));
     Ok(())
 }
