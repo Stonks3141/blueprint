@@ -3,7 +3,7 @@
 [![CI](https://github.com/Stonks3141/blueprint/actions/workflows/ci.yml/badge.svg)](https://github.com/Stonks3141/blueprint/actions/workflows/ci.yml)
 [![license](https://img.shields.io/github/license/Stonks3141/blueprint)](https://www.mozilla.org/en-US/MPL/2.0/)
 
-A tiny Scheme interpreter written in Rust.
+A tiny R7RS Scheme interpreter.
 
 Blueprint intends to be mostly R7RS-small compliant and implement a few SRFIs. It
 is and always will be a single-threaded interpreter, but hopefully I will find the
