@@ -1,6 +1,13 @@
 default:
   @just --list
 
+check:
+  cargo fmt --check
+  cargo clippy -- -D warnings
+
+test:
+  cargo test -- -Z unstable-options --report-time
+
 build:
   cargo build \
     -Z build-std=std,panic_abort \
