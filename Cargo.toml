@@ -1,13 +1,14 @@
 [package]
 name = "blueprint-scheme"
-version = "0.0.1"
+version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 rustc-hash = "1.1"
 smartstring = "1.0"
 nom = "7.1"
-num = { version = "0.4", default-features = false, features = ["std"] }
+num-complex = { version = "0.4", default-features = false }
+num-rational = { version = "0.4", default-features = false }
 quick-error = "2.0"
 xflags = "0.3"
 once_cell = "1.17"

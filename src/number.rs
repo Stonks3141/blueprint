@@ -1,4 +1,5 @@
-use num::{rational::Ratio, Bounded, Complex, FromPrimitive, One, Zero};
+use num_complex::Complex;
+use num_rational::Ratio;
 use std::fmt;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
@@ -189,65 +190,5 @@ impl Neg for Number {
             Self::Rational(n) => Self::Rational(-n),
             Self::Integer(n) => Self::Integer(-n),
         }
-    }
-}
-
-macro_rules! each {
-    ($self:ident, $method:ident) => {
-        match $self {
-            Self::Complex(n) => n.$method(),
-            Self::ExactComplex(n) => n.$method(),
-            Self::Real(n) => n.$method(),
-            Self::Rational(n) => n.$method(),
-            Self::Integer(n) => n.$method(),
-        }
-    };
-}
-
-impl Zero for Number {
-    fn zero() -> Self {
-        Self::ZERO
-    }
-    fn is_zero(&self) -> bool {
-        each!(self, is_zero)
-    }
-    fn set_zero(&mut self) {
-        each!(self, set_zero)
-    }
-}
-
-impl One for Number {
-    fn one() -> Self {
-        Self::ONE
-    }
-    fn is_one(&self) -> bool {
-        each!(self, is_one)
-    }
-    fn set_one(&mut self) {
-        each!(self, set_one)
-    }
-}
-
-impl FromPrimitive for Number {
-    fn from_i64(n: i64) -> Option<Self> {
-        Some(Self::Integer(n))
-    }
-    fn from_u64(n: u64) -> Option<Self> {
-        Some(Self::Integer(n as i64))
-    }
-    fn from_f32(n: f32) -> Option<Self> {
-        Some(Self::Real(n as f64))
-    }
-    fn from_f64(n: f64) -> Option<Self> {
-        Some(Self::Real(n))
-    }
-}
-
-impl Bounded for Number {
-    fn min_value() -> Self {
-        Self::MIN
-    }
-    fn max_value() -> Self {
-        Self::MAX
     }
 }
