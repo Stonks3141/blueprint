@@ -1,6 +1,4 @@
-use num::{
-    rational::Ratio, Bounded, Complex, Float, FromPrimitive, Num, NumCast, One, ToPrimitive, Zero,
-};
+use num::{rational::Ratio, Bounded, Complex, FromPrimitive, One, Zero};
 use std::fmt;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
@@ -103,11 +101,11 @@ impl From<Complex<Ratio<i64>>> for Number {
 impl fmt::Display for Number {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Complex(n) => write!(f, "{}", n),
-            Self::ExactComplex(n) => write!(f, "{}", n),
-            Self::Real(n) => write!(f, "{}", n),
-            Self::Rational(n) => write!(f, "{}", n),
-            Self::Integer(n) => write!(f, "{}", n),
+            Self::Complex(n) => write!(f, "{n}"),
+            Self::ExactComplex(n) => write!(f, "{n}"),
+            Self::Real(n) => write!(f, "{n}"),
+            Self::Rational(n) => write!(f, "{n}"),
+            Self::Integer(n) => write!(f, "{n}"),
         }
     }
 }

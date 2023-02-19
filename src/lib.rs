@@ -77,17 +77,17 @@ fn make_list(mut vals: impl Iterator<Item = Value>) -> Value {
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Number(x) => write!(f, "{}", x),
-            Self::Boolean(x) => write!(f, "{}", x),
-            Self::Pair(car, cdr) => write!(f, "({} . {})", car, cdr),
+            Self::Number(x) => write!(f, "{x}"),
+            Self::Boolean(x) => write!(f, "{x}"),
+            Self::Pair(car, cdr) => write!(f, "({car} . {cdr})"),
             Self::Vector(vec) => {
                 write!(f, "#(")?;
                 let mut iter = vec.iter().peekable();
                 while let Some(val) = iter.next() {
                     if iter.peek().is_some() {
-                        write!(f, "{} ", val)?;
+                        write!(f, "{val} ")?;
                     } else {
-                        write!(f, "{}", val)?;
+                        write!(f, "{val}")?;
                     }
                 }
                 write!(f, ")")
@@ -97,16 +97,16 @@ impl fmt::Display for Value {
                 let mut iter = vec.iter().peekable();
                 while let Some(val) = iter.next() {
                     if iter.peek().is_some() {
-                        write!(f, "{} ", val)?;
+                        write!(f, "{val} ")?;
                     } else {
-                        write!(f, "{}", val)?;
+                        write!(f, "{val}")?;
                     }
                 }
                 write!(f, ")")
             }
-            Self::Symbol(x) => write!(f, "{}", x),
-            Self::Char(x) => write!(f, "'{}'", x),
-            Self::String(x) => write!(f, "\"{}\"", x),
+            Self::Symbol(x) => write!(f, "{x}"),
+            Self::Char(x) => write!(f, "'{x}'"),
+            Self::String(x) => write!(f, "\"{x}\""),
             Self::Closure { .. } | Self::Builtin(_) => write!(f, "{{closure}}"),
             Self::Nil => write!(f, "()"),
         }
@@ -287,11 +287,11 @@ impl<'a> Env<'a> {
 impl<'a> fmt::Display for Env<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for (k, v) in &self.this {
-            write!(f, "{}: {}\n\n", k, v.get().borrow())?;
+            write!(f, "{k}: {}\n\n", v.get().borrow())?;
         }
         self.outer
             .as_ref()
-            .map_or(Ok(()), |outer| write!(f, "{}", outer))
+            .map_or(Ok(()), |outer| write!(f, "{outer}"))
     }
 }
 

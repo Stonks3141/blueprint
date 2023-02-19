@@ -29,7 +29,7 @@ pub fn eval(mut expr: Expr, mut env: Cow<'_, Env>) -> Result<MaybeWeak<RefCell<V
                     _ => {
                         return Err(Error::Value {
                             expected: "{closure}".to_string(),
-                            found: format!("{}", procedure),
+                            found: format!("{procedure}"),
                         });
                     }
                 };
@@ -85,8 +85,8 @@ pub fn eval(mut expr: Expr, mut env: Cow<'_, Env>) -> Result<MaybeWeak<RefCell<V
                 let new_env = Env {
                     outer: Some(&env),
                     this: bindings
-                        .iter()
-                        .map(|(k, _)| (k.clone(), MaybeWeak::new(RefCell::new(Value::Nil))))
+                        .keys()
+                        .map(|k| (k.clone(), MaybeWeak::new(RefCell::new(Value::Nil))))
                         .collect(),
                 };
                 let mut inner_env = new_env.clone();
