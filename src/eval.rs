@@ -51,7 +51,7 @@ pub fn eval(mut expr: Expr, mut env: Cow<'_, Env>) -> Result<MaybeWeak<RefCell<V
                     outer: None,
                     this: closure_env,
                 });
-                expr = *val.clone();
+                expr = (**val).clone();
                 continue;
             }
             Expr::Lambda { args, val } => {
@@ -119,7 +119,7 @@ pub fn eval(mut expr: Expr, mut env: Cow<'_, Env>) -> Result<MaybeWeak<RefCell<V
                 break eval(*val, Cow::Borrowed(&new_env))?;
             }
             Expr::Define { .. } => {
-                panic!("`define`s should have been removed by the `unify` function and the parser")
+                panic!("`define`s should have been desugared")
             }
             Expr::If { predicate, t, f } => {
                 let predicate = eval(*predicate, Cow::Borrowed(&env))?.get();
