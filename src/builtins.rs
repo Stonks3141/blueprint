@@ -85,9 +85,12 @@ pub fn base() -> HashMap<Ident, Builtin> {
             }
             v(Value::Nil)
         },
-        "newline" => |_| {
-            println!();
-            v(Value::Nil)
+        "newline" => |args| match args.len() {
+            0 => {
+                println!();
+                v(Value::Nil)
+            },
+            n => Err(Error::TooManyArguments { expected: 0, got: n })
         },
         "exit" => |args| {
             let Some(ok) = args.get(0) else {
