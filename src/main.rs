@@ -93,7 +93,7 @@ fn try_main() -> Result<(), Error> {
                 *v = v.weak();
 
                 let val = match eval(*val, Cow::Borrowed(&weak_env)) {
-                    Ok(val) => val,
+                    Ok(val) => val.inner(),
                     Err(e) => {
                         println!("error: {e}");
                         continue;
@@ -105,13 +105,13 @@ fn try_main() -> Result<(), Error> {
             }
 
             let val = match eval(expr, Cow::Borrowed(&env)) {
-                Ok(val) => val,
+                Ok(val) => val.get(),
                 Err(e) => {
                     println!("error: {e}");
                     continue;
                 }
             };
-            println!("{val}");
+            println!("{}", val.borrow());
         }
     }
     Ok(())

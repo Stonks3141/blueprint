@@ -21,7 +21,7 @@ use std::{
 pub static REPL: OnceCell<bool> = OnceCell::new();
 
 pub type Ident = SmartString<LazyCompact>;
-pub type Builtin = fn(Vec<Value>) -> Result<Value>;
+pub type Builtin = fn(Vec<MaybeWeak<RefCell<Value>>>) -> Result<MaybeWeak<RefCell<Value>>>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
@@ -221,6 +221,12 @@ impl<T> MaybeWeak<T> {
     }
 }
 
+impl<T: Clone> MaybeWeak<RefCell<T>> {
+    pub fn inner(&self) -> T {
+        self.get().borrow().clone()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Env<'a> {
     pub outer: Option<&'a Env<'a>>,
@@ -258,10 +264,10 @@ impl<'a> Env<'a> {
         }
     }
 
-    fn get(&self, ident: &str) -> Option<Rc<RefCell<Value>>> {
+    fn get(&self, ident: &str) -> Option<MaybeWeak<RefCell<Value>>> {
         self.this
             .get(ident)
-            .map(MaybeWeak::get)
+            .cloned()
             .or_else(|| self.outer.as_ref().and_then(|outer| outer.get(ident)))
     }
 

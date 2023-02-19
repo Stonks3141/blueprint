@@ -3,7 +3,7 @@ use crate::{error::Result, parse::parse_expr, Number};
 
 fn run(prgm: &str) -> Result<Value> {
     let expr = parse_expr(prgm)?.1;
-    eval(expr, Cow::Owned(Env::new()))
+    eval(expr, Cow::Owned(Env::new())).map(|it| it.inner())
 }
 
 #[test]
