@@ -3,3 +3,4 @@ perf.*
 flamegraph.svg
 report.*
 dhat.out.*
+/result
