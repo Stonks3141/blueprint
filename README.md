@@ -31,9 +31,9 @@ arguments can be obtained by running with the `--help` flag.
 
 ### Example
 
-`main.scm`:
-
 ```scheme
+; main.scm
+
 (define (fib n)
   (if (or (= n 1) (= n 2))
     1
