@@ -42,7 +42,9 @@ fn main() -> ExitCode {
 fn try_main() -> Result<(), Error> {
     let flags = xflags::parse_or_exit! {
         /// Print the version and exit.
-        optional -V,--version
+        optional -v, --version
+        /// Run the <cmd> instead of reading from stdin
+        optional -c, --cmd cmd: String
         /// Path to the Scheme file to execute
         optional path: PathBuf
     };
@@ -56,6 +58,9 @@ fn try_main() -> Result<(), Error> {
         REPL.set(false).unwrap();
         let prgm = fs::read_to_string(path)?;
         exec(&prgm)?;
+    } else if let Some(cmd) = flags.cmd {
+        REPL.set(false).unwrap();
+        exec(&cmd)?;
     } else {
         REPL.set(true).unwrap();
         println!("blueprint v{}", env!("CARGO_PKG_VERSION"));
