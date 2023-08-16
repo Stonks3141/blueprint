@@ -8,7 +8,6 @@ pub use eval::eval;
 pub use number::Number;
 
 use error::{Error, Result};
-use once_cell::sync::OnceCell;
 use rustc_hash::FxHashMap as HashMap;
 use smartstring::{LazyCompact, SmartString};
 use std::{
@@ -16,9 +15,10 @@ use std::{
     cell::RefCell,
     fmt,
     rc::{Rc, Weak},
+    sync::OnceLock,
 };
 
-pub static REPL: OnceCell<bool> = OnceCell::new();
+pub static REPL: OnceLock<bool> = OnceLock::new();
 
 pub type Ident = SmartString<LazyCompact>;
 pub type Builtin = fn(Vec<MaybeWeak<RefCell<Value>>>) -> Result<MaybeWeak<RefCell<Value>>>;
